@@ -6,9 +6,9 @@ set(bin image_face_detect.elf)
 
 include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${nncase_sdk_root}/riscv64/rvvlib/include)
-include_directories(${k230_sdk}/src/big/mpp/userapps/api/)
-include_directories(${k230_sdk}/src/big/mpp/include)
-include_directories(${k230_sdk}/src/big/mpp/include/comm)
+include_directories(${k230_sdk}/mpp/userapps/api/)
+include_directories(${k230_sdk}/mpp/include)
+include_directories(${k230_sdk}/mpp/include/comm)
 
 link_directories(${nncase_sdk_root}/riscv64/rvvlib/)
 
