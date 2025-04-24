@@ -3,10 +3,11 @@ include ../../../toolchain.mk
 
 DIR = $(shell basename `pwd`)
 LIB = $(RTSMART_HAL_LIB_INSTALL_PATH)/lib$(DIR).a
+BUILD := $(SDK_RTSMART_BUILD_DIR)/libs/rtsmart_hal/$(DIR)
 
 CFILES := $(wildcard *.c)
-COBJS  := $(CFILES:.c=.o)
-CDEPS  := $(CFILES:.c=.o.d)
+COBJS	:= $(patsubst %, $(BUILD)/%, $(CFILES:.c=.o))
+CDEPS	:= $(patsubst %, $(BUILD)/%, $(CFILES:.c=.o.d))
 
 CINCS  := $(wildcard *.h)
 
@@ -45,8 +46,18 @@ $(LIB): $(COBJS)
 	@$(ECHO) "AR $@"
 	@$(AR) rcs $@ $^
 
-$(COBJS): %.o: %.c
+$(COBJS): $(BUILD)/%.o: %.c
 	@$(ECHO) [CC] $<
 	@$(CC) $(CFLAGS) -MD -MP -MF $@.d -c $< -o $@
+
+# $(sort $(var)) removes duplicates
+#
+# The net effect of this, is it causes the objects to depend on the
+# object directories (but only for existence), and the object directories
+# will be created if they don't exist.
+OBJ_DIRS = $(sort $(dir $(COBJS)))
+$(COBJS): | $(OBJ_DIRS)
+$(OBJ_DIRS):
+	@mkdir -p $@
 
 -include $(CDEPS)
