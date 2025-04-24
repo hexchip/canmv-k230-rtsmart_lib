@@ -1,0 +1,5 @@
+menu "RT-Smart Libraries Configuration"
+
+    source "$(SDK_RTSMART_SRC_DIR)/libs/rtsmart_hal/Kconfig"
+
+endmenu
