@@ -16,7 +16,7 @@ CFLAGS += -I.
 
 .PHONY: all clean distclean
 
-.PHONY: ensure_install_path
+.PHONY: check_path
 check_path:
 	@if [ -z "$(RTSMART_HAL_LIB_INSTALL_PATH)" ]; then \
 		echo "Error: RTSMART_HAL_LIB_INSTALL_PATH is not set"; \

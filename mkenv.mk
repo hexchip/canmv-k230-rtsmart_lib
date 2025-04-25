@@ -9,6 +9,9 @@ include $(SDK_SRC_ROOT_DIR)/.config
 RTSMART_HAL_LIB_INSTALL_PATH := $(SDK_RTSMART_BUILD_DIR)/libs/rtsmart_hal/lib
 RTSMART_HAL_INC_INSTALL_PATH := $(SDK_RTSMART_BUILD_DIR)/libs/rtsmart_hal/include
 
+RTSMART_3RD_PARTY_LIB_INSTALL_PATH := $(SDK_RTSMART_BUILD_DIR)/libs/3rd-party/lib
+RTSMART_3RD_PARTY_INC_INSTALL_PATH := $(SDK_RTSMART_BUILD_DIR)/libs/3rd-party/include
+
 RM = rm -rf
 ECHO = echo
 CP = cp

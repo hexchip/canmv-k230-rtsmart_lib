@@ -1,6 +1,6 @@
 include ../mkenv.mk
 
-subdirs-y :=
+subdirs-y := freetype
 
 .PHONY: all clean distclean
 
