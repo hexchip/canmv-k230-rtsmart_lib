@@ -1,6 +1,6 @@
 include mkenv.mk
 
-subdirs-y := rtsmart_hal
+subdirs-y := rtsmart_hal 3rd-party
 
 .PHONY: all clean distclean
 

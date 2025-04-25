@@ -1,3 +1,12 @@
 menu "RT-Smart 3rd-party Configuration"
 
+    menuconfig RTSMART_3RD_PARTY_ENABLE_FREETYPE
+        bool "Enable Build FreeType"
+        default y
+
+        if RTSMART_3RD_PARTY_ENABLE_FREETYPE
+
+
+        endif
+
 endmenu
