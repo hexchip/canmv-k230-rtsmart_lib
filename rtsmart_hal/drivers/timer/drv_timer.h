@@ -28,6 +28,10 @@
 
 #define KD_TIMER_MAX_NUM (6)
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Timer Feature Information */
 typedef struct _rt_hwtimer_info {
     int32_t  maxfreq; /* the maximum count frequency timer support */
@@ -93,3 +97,7 @@ static inline int drv_hwtimer_is_started(drv_hwtimer_inst_t* inst)
     }
     return inst->started;
 }
+
+#ifdef __cplusplus
+}
+#endif

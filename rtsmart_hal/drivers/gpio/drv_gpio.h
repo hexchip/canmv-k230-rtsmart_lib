@@ -27,6 +27,10 @@
 #define GPIO_IRQ_MAX_NUM (64)
 #define GPIO_MAX_NUM     (64 + 8)
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum _gpio_pin_edge {
     GPIO_PE_RISING = 0,
     GPIO_PE_FALLING,
@@ -86,3 +90,7 @@ static inline int drv_gpio_toggle(drv_gpio_inst_t* inst)
 
 static inline int drv_gpio_enable_irq(drv_gpio_inst_t* inst) { return drv_gpio_set_irq(inst, 1); }
 static inline int drv_gpio_disable_irq(drv_gpio_inst_t* inst) { return drv_gpio_set_irq(inst, 0); }
+
+#ifdef __cplusplus
+}
+#endif

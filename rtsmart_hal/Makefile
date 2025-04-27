@@ -1,6 +1,6 @@
 include ../mkenv.mk
 
-subdirs-y := drivers
+subdirs-y := drivers utils
 
 .PHONY: all clean distclean
 

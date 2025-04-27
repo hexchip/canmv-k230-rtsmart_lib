@@ -1,5 +1,6 @@
 menu "RT-Smart Userspace Hal Configuration"
 
     source "$(SDK_RTSMART_SRC_DIR)/libs/rtsmart_hal/drivers/Kconfig"
+    source "$(SDK_RTSMART_SRC_DIR)/libs/rtsmart_hal/utils/Kconfig"
 
 endmenu
