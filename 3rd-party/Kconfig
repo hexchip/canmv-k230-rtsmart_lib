@@ -6,7 +6,16 @@ menu "RT-Smart 3rd-party Configuration"
 
         if RTSMART_3RD_PARTY_ENABLE_FREETYPE
 
+        endif
 
+    menuconfig RTSMART_3RD_PARTY_ENABLE_MBEDTLS
+        bool "Enable Build MbedTLS"
+        default y
+
+        if RTSMART_3RD_PARTY_ENABLE_MBEDTLS
+            config RTSMART_3RD_PARTY_ENABLE_MBEDTLS_TESTS
+                bool "Enable Build MbedTLS Test Programs"
+                select RTSMART_COPY_LIBS_TEST
         endif
 
 endmenu

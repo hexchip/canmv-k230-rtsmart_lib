@@ -32,6 +32,8 @@
 extern "C" {
 #endif
 
+/** hard timer ***************************************************************/
+
 /* Timer Feature Information */
 typedef struct _rt_hwtimer_info {
     int32_t  maxfreq; /* the maximum count frequency timer support */
@@ -51,52 +53,44 @@ typedef enum {
 
 typedef void (*timer_irq_callback)(void* args);
 
-typedef struct _drv_hwtimer_inst {
-    void* base;
+typedef struct _drv_hard_timer_inst drv_hard_timer_inst_t;
 
-    int id, fd, started;
+int  drv_hard_timer_inst_create(int id, drv_hard_timer_inst_t** inst);
+void drv_hard_timer_inst_destroy(drv_hard_timer_inst_t** inst);
 
-    rt_hwtimer_mode_t curr_mode;
-    uint32_t          curr_freq_hz;
-    uint32_t          curr_period_ms;
-    rt_hwtimer_info_t curr_timer_info;
+int drv_hard_timer_get_info(drv_hard_timer_inst_t* inst, rt_hwtimer_info_t* info);
 
-    void*              irq_args;
-    timer_irq_callback irq_callback;
-} drv_hwtimer_inst_t;
+int drv_hard_timer_set_mode(drv_hard_timer_inst_t* inst, rt_hwtimer_mode_t mode);
+int drv_hard_timer_set_freq(drv_hard_timer_inst_t* inst, uint32_t freq);
+int drv_hard_timer_set_period(drv_hard_timer_inst_t* inst, uint32_t period_ms);
 
-int  drv_hwtimer_inst_create(int id, drv_hwtimer_inst_t** inst);
-void drv_hwtimer_inst_destroy(drv_hwtimer_inst_t** inst);
+int drv_hard_timer_get_freq(drv_hard_timer_inst_t* inst, uint32_t* freq);
 
-int drv_hwtimer_get_info(drv_hwtimer_inst_t* inst, rt_hwtimer_info_t* info);
+int drv_hard_timer_start(drv_hard_timer_inst_t* inst);
+int drv_hard_timer_stop(drv_hard_timer_inst_t* inst);
 
-int drv_hwtimer_set_mode(drv_hwtimer_inst_t* inst, rt_hwtimer_mode_t mode);
-int drv_hwtimer_set_freq(drv_hwtimer_inst_t* inst, uint32_t freq);
-int drv_hwtimer_set_period(drv_hwtimer_inst_t* inst, uint32_t period_ms);
+int drv_hard_timer_register_irq(drv_hard_timer_inst_t* inst, timer_irq_callback callback, void* userargs);
+int drv_hard_timer_unregister_irq(drv_hard_timer_inst_t* inst);
 
-int drv_hwtimer_get_freq(drv_hwtimer_inst_t* inst, uint32_t* freq);
+int drv_hard_timer_get_id(drv_hard_timer_inst_t* inst);
+int drv_hard_timer_is_started(drv_hard_timer_inst_t* inst);
 
-int drv_hwtimer_start(drv_hwtimer_inst_t* inst);
-int drv_hwtimer_stop(drv_hwtimer_inst_t* inst);
+/** soft timer ***************************************************************/
+typedef struct _drv_soft_timer_inst drv_soft_timer_inst_t;
 
-int drv_hwtimer_register_irq(drv_hwtimer_inst_t* inst, timer_irq_callback callback, void* userargs);
-int drv_hwtimer_unregister_irq(drv_hwtimer_inst_t* inst);
+int  drv_soft_timer_create(drv_soft_timer_inst_t** inst);
+void drv_soft_timer_destroy(drv_soft_timer_inst_t** inst);
 
-static inline int drv_hwtimer_get_id(drv_hwtimer_inst_t* inst)
-{
-    if ((void*)0 == inst) {
-        return -1;
-    }
-    return inst->id;
-}
+int drv_soft_timer_set_mode(drv_soft_timer_inst_t* inst, rt_hwtimer_mode_t mode);
+int drv_soft_timer_set_period(drv_soft_timer_inst_t* inst, int period_ms);
 
-static inline int drv_hwtimer_is_started(drv_hwtimer_inst_t* inst)
-{
-    if ((void*)0 == inst) {
-        return 0;
-    }
-    return inst->started;
-}
+int drv_soft_timer_start(drv_soft_timer_inst_t* inst);
+int drv_soft_timer_stop(drv_soft_timer_inst_t* inst);
+
+int drv_soft_timer_register_irq(drv_soft_timer_inst_t* inst, timer_irq_callback callback, void* userargs);
+int drv_soft_timer_unregister_irq(drv_soft_timer_inst_t* inst);
+
+int drv_soft_timer_is_started(drv_soft_timer_inst_t* inst);
 
 #ifdef __cplusplus
 }

@@ -56,6 +56,20 @@ typedef struct {
     void*   sigval;
 } hwtimer_irqcfg_t;
 
+struct _drv_hard_timer_inst {
+    void* base;
+
+    int id, fd, started;
+
+    rt_hwtimer_mode_t curr_mode;
+    uint32_t          curr_freq_hz;
+    uint32_t          curr_period_ms;
+    rt_hwtimer_info_t curr_timer_info;
+
+    void*              irq_args;
+    timer_irq_callback irq_callback;
+};
+
 static const int timer_inst_type = 0;
 
 static int timer_in_use[KD_TIMER_MAX_NUM];
@@ -74,7 +88,7 @@ static int drv_timer_open(int id)
     return open(dev_name, O_RDWR);
 }
 
-static int drv_timer_ioctl(drv_hwtimer_inst_t* inst, int cmd, void* arg)
+static int drv_timer_ioctl(drv_hard_timer_inst_t* inst, int cmd, void* arg)
 {
     if ((NULL == inst) || (0x00 > inst->fd)) {
         printf("timer not open\n");
@@ -84,7 +98,7 @@ static int drv_timer_ioctl(drv_hwtimer_inst_t* inst, int cmd, void* arg)
     return ioctl(inst->fd, cmd, arg);
 }
 
-int drv_hwtimer_inst_create(int id, drv_hwtimer_inst_t** inst)
+int drv_hard_timer_inst_create(int id, drv_hard_timer_inst_t** inst)
 {
     int fd = -1;
 
@@ -107,12 +121,12 @@ int drv_hwtimer_inst_create(int id, drv_hwtimer_inst_t** inst)
         *inst = NULL;
     }
 
-    *inst = malloc(sizeof(drv_hwtimer_inst_t));
+    *inst = malloc(sizeof(drv_hard_timer_inst_t));
     if (NULL == *inst) {
         printf("malloc failed");
         return -1;
     }
-    memset(*inst, 0x00, sizeof(drv_hwtimer_inst_t));
+    memset(*inst, 0x00, sizeof(drv_hard_timer_inst_t));
 
     (*inst)->base           = (void*)&timer_inst_type;
     (*inst)->id             = id;
@@ -127,7 +141,7 @@ int drv_hwtimer_inst_create(int id, drv_hwtimer_inst_t** inst)
     return 0;
 }
 
-void drv_hwtimer_inst_destroy(drv_hwtimer_inst_t** inst)
+void drv_hard_timer_inst_destroy(drv_hard_timer_inst_t** inst)
 {
     int id;
     if (NULL == (*inst)) {
@@ -136,8 +150,8 @@ void drv_hwtimer_inst_destroy(drv_hwtimer_inst_t** inst)
 
     id = (*inst)->id;
 
-    drv_hwtimer_stop(*inst);
-    drv_hwtimer_unregister_irq(*inst);
+    drv_hard_timer_stop(*inst);
+    drv_hard_timer_unregister_irq(*inst);
 
     close((*inst)->fd);
 
@@ -149,7 +163,7 @@ void drv_hwtimer_inst_destroy(drv_hwtimer_inst_t** inst)
     return;
 }
 
-int drv_hwtimer_get_info(drv_hwtimer_inst_t* inst, rt_hwtimer_info_t* info)
+int drv_hard_timer_get_info(drv_hard_timer_inst_t* inst, rt_hwtimer_info_t* info)
 {
     // if ((NULL == inst) || (0x00 > inst->fd)) {
     //     return -1;
@@ -166,7 +180,7 @@ int drv_hwtimer_get_info(drv_hwtimer_inst_t* inst, rt_hwtimer_info_t* info)
     return 0;
 }
 
-int drv_hwtimer_set_mode(drv_hwtimer_inst_t* inst, rt_hwtimer_mode_t mode)
+int drv_hard_timer_set_mode(drv_hard_timer_inst_t* inst, rt_hwtimer_mode_t mode)
 {
     rt_hwtimer_mode_t _mode = mode;
 
@@ -188,12 +202,12 @@ int drv_hwtimer_set_mode(drv_hwtimer_inst_t* inst, rt_hwtimer_mode_t mode)
     return 0;
 }
 
-int drv_hwtimer_set_freq(drv_hwtimer_inst_t* inst, uint32_t freq)
+int drv_hard_timer_set_freq(drv_hard_timer_inst_t* inst, uint32_t freq)
 {
     uint32_t _freq = freq;
     int32_t  max_freq, min_freq;
 
-    if (0x00 != drv_hwtimer_get_info(inst, NULL)) {
+    if (0x00 != drv_hard_timer_get_info(inst, NULL)) {
         return -1;
     }
 
@@ -222,7 +236,7 @@ int drv_hwtimer_set_freq(drv_hwtimer_inst_t* inst, uint32_t freq)
     return 0;
 }
 
-int drv_hwtimer_get_freq(drv_hwtimer_inst_t* inst, uint32_t* freq)
+int drv_hard_timer_get_freq(drv_hard_timer_inst_t* inst, uint32_t* freq)
 {
     uint32_t _freq;
 
@@ -239,16 +253,16 @@ int drv_hwtimer_get_freq(drv_hwtimer_inst_t* inst, uint32_t* freq)
     return 0;
 }
 
-int drv_hwtimer_set_period(drv_hwtimer_inst_t* inst, uint32_t period_ms)
+int drv_hard_timer_set_period(drv_hard_timer_inst_t* inst, uint32_t period_ms)
 {
     float minPeriod_ms, maxPeriod_ms;
     float freq_kHz; // Frequency in kHz for ms calculations
 
-    if (0x00 != drv_hwtimer_get_info(inst, NULL)) {
+    if (0x00 != drv_hard_timer_get_info(inst, NULL)) {
         return -1;
     }
 
-    if (0x00 != drv_hwtimer_get_freq(inst, NULL)) {
+    if (0x00 != drv_hard_timer_get_freq(inst, NULL)) {
         return -1;
     }
 
@@ -276,7 +290,7 @@ int drv_hwtimer_set_period(drv_hwtimer_inst_t* inst, uint32_t period_ms)
     return 0;
 }
 
-int drv_hwtimer_start(drv_hwtimer_inst_t* inst)
+int drv_hard_timer_start(drv_hard_timer_inst_t* inst)
 {
     rt_hwtimerval_t tv;
     uint32_t        period_ms;
@@ -298,7 +312,7 @@ int drv_hwtimer_start(drv_hwtimer_inst_t* inst)
     return 0;
 }
 
-int drv_hwtimer_stop(drv_hwtimer_inst_t* inst)
+int drv_hard_timer_stop(drv_hard_timer_inst_t* inst)
 {
     if (0x00 != drv_timer_ioctl(inst, HWTIMER_CTRL_STOP, NULL)) {
         printf("stop timer failed.\n");
@@ -311,7 +325,7 @@ int drv_hwtimer_stop(drv_hwtimer_inst_t* inst)
 
 static void drv_timer_sig_handler(int sig, siginfo_t* si, void* uc)
 {
-    drv_hwtimer_inst_t* inst = si->si_ptr;
+    drv_hard_timer_inst_t* inst = si->si_ptr;
 
     if (KD_TIMER_SIG != sig) {
         return;
@@ -330,7 +344,7 @@ static void drv_timer_sig_handler(int sig, siginfo_t* si, void* uc)
     }
 }
 
-int drv_hwtimer_register_irq(drv_hwtimer_inst_t* inst, timer_irq_callback callback, void* userargs)
+int drv_hard_timer_register_irq(drv_hard_timer_inst_t* inst, timer_irq_callback callback, void* userargs)
 {
     struct sigaction sa;
     hwtimer_irqcfg_t cfg;
@@ -374,7 +388,7 @@ int drv_hwtimer_register_irq(drv_hwtimer_inst_t* inst, timer_irq_callback callba
     return 0;
 }
 
-int drv_hwtimer_unregister_irq(drv_hwtimer_inst_t* inst)
+int drv_hard_timer_unregister_irq(drv_hard_timer_inst_t* inst)
 {
     struct sigaction sa;
     hwtimer_irqcfg_t cfg;
@@ -403,4 +417,20 @@ int drv_hwtimer_unregister_irq(drv_hwtimer_inst_t* inst)
     sigaction(KD_TIMER_SIG, &sa, NULL);
 
     return 0;
+}
+
+int drv_hard_timer_get_id(drv_hard_timer_inst_t* inst)
+{
+    if ((void*)0 == inst) {
+        return -1;
+    }
+    return inst->id;
+}
+
+int drv_hard_timer_is_started(drv_hard_timer_inst_t* inst)
+{
+    if ((void*)0 == inst) {
+        return 0;
+    }
+    return inst->started;
 }

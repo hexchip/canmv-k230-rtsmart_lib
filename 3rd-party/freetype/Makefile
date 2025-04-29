@@ -97,8 +97,9 @@ check_path:
 
 .PHONY: all
 all: check_path $(LIB)
-	@rsync -aq --delete $(LOCAL_SRC_DIR)/freetype/include/ $(RTSMART_3RD_PARTY_INC_INSTALL_PATH)
-	@cp freetype_wrap.h $(RTSMART_3RD_PARTY_INC_INSTALL_PATH)
+	@cp -rp $(LOCAL_SRC_DIR)/freetype/include/freetype $(RTSMART_3RD_PARTY_INC_INSTALL_PATH)
+	@cp -rp $(LOCAL_SRC_DIR)/freetype/include/ft2build.h $(RTSMART_3RD_PARTY_INC_INSTALL_PATH)
+	@cp -rp freetype_wrap.h $(RTSMART_3RD_PARTY_INC_INSTALL_PATH)
 	@echo "Make lib$(DIR) done."
 
 $(LIB): $(OBJS) 

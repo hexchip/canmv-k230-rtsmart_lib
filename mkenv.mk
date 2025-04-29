@@ -6,6 +6,8 @@ include $(SDK_SRC_ROOT_DIR)/tools/mkenv.mk
 
 include $(SDK_SRC_ROOT_DIR)/.config
 
+RTSMART_LIBS_ELF_INSTALL_PATH := $(SDK_RTSMART_BUILD_DIR)/libs/elf
+
 RTSMART_HAL_LIB_INSTALL_PATH := $(SDK_RTSMART_BUILD_DIR)/libs/rtsmart_hal/lib
 RTSMART_HAL_INC_INSTALL_PATH := $(SDK_RTSMART_BUILD_DIR)/libs/rtsmart_hal/include
 
