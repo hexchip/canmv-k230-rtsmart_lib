@@ -24,7 +24,7 @@ CWARN :=
 # CWARN += -Wall -Werror
 # CWARN += -Wno-int-conversion
 
-CFLAGS += -I. -Iport -Imbedtls/include -DMBEDTLS_USER_CONFIG_FILE=\"port_config.h\" -I$(RTSMART_HAL_INC_INSTALL_PATH) 
+CFLAGS += -I. -Iport -Imbedtls/include -DMBEDTLS_USER_CONFIG_FILE=\"mbedtls_port_config.h\" -I$(RTSMART_HAL_INC_INSTALL_PATH) 
 CFLAGS += -std=gnu99 -fopenmp -march=rv64imafdcv -mabi=lp64d -mcmodel=medany -Os $(CWARN)
 
 CFILES_ALL        = $(foreach dir, $(SRC_DIRS), $(wildcard $(dir)/*.c))
@@ -42,7 +42,7 @@ CXXDEPS	:= $(patsubst %, $(BUILD)/%, $(CXXFILES:.cpp=.o.d))
 DEPS	:= $(CDEPS) $(CXXDEPS)
 
 CFLAGS_MBEDTLS := -march=rv64imafdcv -mabi=lp64d -mcmodel=medany -Os -n --static
-CFLAGS_MBEDTLS += -DMBEDTLS_USER_CONFIG_FILE=\"port_config.h\"
+CFLAGS_MBEDTLS += -DMBEDTLS_USER_CONFIG_FILE=\"mbedtls_port_config.h\"
 CFLAGS_MBEDTLS += -I$(LOCAL_SRC_DIR)/port $(RTSMART_HAL_INC)
 
 LDFLAGS_MBEDTLS := -n --static -T $(LOCAL_SRC_DIR)/port/link.lds -L$(RTSMART_3RD_PARTY_LIB_INSTALL_PATH) -lmbedtls_port $(RTSMART_HAL_LIB_DIR) $(RTSMART_HAL_LIBS)
@@ -77,6 +77,7 @@ all: check_path $(LIB) mbedtls_library mbedtls_tests
 	@cp -rp mbedtls/library/libmbedcrypto.a $(RTSMART_3RD_PARTY_LIB_INSTALL_PATH)
 	@cp -rp mbedtls/include/mbedtls $(RTSMART_3RD_PARTY_INC_INSTALL_PATH)
 	@cp -rp mbedtls/include/psa $(RTSMART_3RD_PARTY_INC_INSTALL_PATH)
+	@cp -rp port/*.h $(RTSMART_3RD_PARTY_INC_INSTALL_PATH)
 
 ifeq ($(CONFIG_RTSMART_3RD_PARTY_ENABLE_MBEDTLS_TESTS),y)
 	@mkdir -p $(RTSMART_LIBS_ELF_INSTALL_PATH)
