@@ -16,6 +16,7 @@ menu "RT-Smart 3rd-party Configuration"
             config RTSMART_3RD_PARTY_ENABLE_MBEDTLS_TESTS
                 bool "Enable Build MbedTLS Test Programs"
                 select RTSMART_COPY_LIBS_TEST
+                default n
         endif
 
 endmenu

@@ -1,6 +1,6 @@
 include ../../mkenv.mk
 
-subdirs-y :=
+subdirs-y := canmv_misc
 
 .PHONY: all clean distclean
 

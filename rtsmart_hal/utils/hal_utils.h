@@ -27,13 +27,6 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#include <errno.h>
-#include <fcntl.h>
-#include <sys/ioctl.h>
-#include <sys/time.h>
-#include <time.h>
-#include <unistd.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -67,26 +60,6 @@ static __inline __attribute__((__always_inline__)) uint64_t utils_cpu_ticks_ns(v
     uint64_t time;
     __asm__ __volatile__("rdtime %0" : "=r"(time));
     return (time * 1000000000ULL) / CPU_TICKS_PER_SECOND;
-}
-
-static __inline __attribute__((__always_inline__)) int canmv_misc_dev_ioctl(int cmd, void* args)
-{
-    int result = 0, misc_dev_fd = -1;
-
-    if (0 > (misc_dev_fd = open("/dev/canmv_misc", O_RDWR))) {
-        printf("can not misc device");
-        return -1;
-    }
-
-    if (0x00 != (result = ioctl(misc_dev_fd, cmd, args))) {
-        printf("ioctl misc device failed, cmd %x\n", cmd);
-    }
-
-    if (0 <= misc_dev_fd) {
-        close(misc_dev_fd);
-    }
-
-    return result;
 }
 
 #ifdef __cplusplus
