@@ -341,7 +341,7 @@ int drv_fpioa_set_pin_func(int pin, fpioa_func_t func)
     int found    = 0;
     int func_sel = 0;
 
-    fpioa_iomux_cfg_t       cfg;
+    fpioa_iomux_cfg_t       cfg, cfg_tmp;
     const fpioa_func_cfg_t* func_cfg   = NULL;
     const uint8_t*          avail_func = NULL;
 
@@ -371,7 +371,14 @@ int drv_fpioa_set_pin_func(int pin, fpioa_func_t func)
         for (int i = 0; i < alt_pins_cnt; i++) {
             if (0 != drv_fpioa_get_pin_func(alt_pins[i], &alt_pin_curr_func)) {
                 if (alt_pin_curr_func == func) {
-                    drv_fpioa_set_pin_cfg(alt_pins[i], 0);
+                    if (0x00 != drv_fpioa_get_pin_cfg(alt_pins[i], &cfg_tmp.u.value)) {
+                        printf("get pin %d cfg failed.\n", alt_pins[i]);
+                        continue;
+                    }
+                    cfg.u.value   = 0;
+                    cfg.u.bit.msc = cfg_tmp.u.bit.msc;
+
+                    drv_fpioa_set_pin_cfg(alt_pins[i], cfg.u.value);
                 }
             }
         }
@@ -383,6 +390,12 @@ int drv_fpioa_set_pin_func(int pin, fpioa_func_t func)
     }
     cfg.u.value      = func_cfg->cfg;
     cfg.u.bit.io_sel = func_sel;
+
+    if (0x00 != drv_fpioa_get_pin_cfg(pin, &cfg_tmp.u.value)) {
+        printf("get pin cfg %d failed\n", pin);
+        return -1;
+    }
+    cfg.u.bit.msc    = cfg_tmp.u.bit.msc;
 
     return drv_fpioa_set_pin_cfg(pin, cfg.u.value);
 }
