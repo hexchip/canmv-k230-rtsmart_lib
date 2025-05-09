@@ -265,4 +265,6 @@ int freetype_wrap_draw_string(int x_off, int y_off, int char_size, const char* s
         // point_x += (face->glyph->advance.x >> 6);
         point_x += (bitmapGlyph->root.advance.x >> 16);
     }
+
+    return FREETYPE_WRAP_ERR_NONE;
 }
