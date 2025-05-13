@@ -299,6 +299,15 @@ int drv_fpioa_get_pin_func_name(int pin, char* buf, size_t buf_size);
 int drv_fpioa_get_pin_alt_func_names(int pin, char* buf, size_t buf_size);
 int drv_fpioa_get_func_assigned_pin(fpioa_func_t func);
 
+/* for fpioa configure generator. */
+typedef struct _fpioa_func_cfg {
+    fpioa_func_t func;
+    const char*  name;
+    uint32_t     cfg;
+} fpioa_func_cfg_t;
+
+const fpioa_func_cfg_t* drv_fpioa_get_func_cfg(fpioa_func_t func);
+
 #define DRV_FPIOA_SET_TEMPLATE(item)                                                                                   \
     static inline __attribute__((__always_inline__)) int drv_fpioa_set_pin_##item(int pin, int value)                  \
     {                                                                                                                  \
@@ -323,35 +332,35 @@ int drv_fpioa_get_func_assigned_pin(fpioa_func_t func);
         return cfg.u.bit.item;                                                                                         \
     }
 
-    // int drv_fpioa_set_pin_st(int pin, int value);
-    DRV_FPIOA_SET_TEMPLATE(st)
-    // int drv_fpioa_get_pin_st(int pin);
-    DRV_FPIOA_GET_TEMPLATE(st)
+// int drv_fpioa_set_pin_st(int pin, int value);
+DRV_FPIOA_SET_TEMPLATE(st)
+// int drv_fpioa_get_pin_st(int pin);
+DRV_FPIOA_GET_TEMPLATE(st)
 
-    // int drv_fpioa_set_pin_ds(int pin, int value);
-    DRV_FPIOA_SET_TEMPLATE(ds)
-    // int drv_fpioa_get_pin_ds(int pin);
-    DRV_FPIOA_GET_TEMPLATE(ds)
+// int drv_fpioa_set_pin_ds(int pin, int value);
+DRV_FPIOA_SET_TEMPLATE(ds)
+// int drv_fpioa_get_pin_ds(int pin);
+DRV_FPIOA_GET_TEMPLATE(ds)
 
-    // int drv_fpioa_set_pin_pd(int pin, int value);
-    DRV_FPIOA_SET_TEMPLATE(pd)
-    // int drv_fpioa_get_pin_pd(int pin);
-    DRV_FPIOA_GET_TEMPLATE(pd)
+// int drv_fpioa_set_pin_pd(int pin, int value);
+DRV_FPIOA_SET_TEMPLATE(pd)
+// int drv_fpioa_get_pin_pd(int pin);
+DRV_FPIOA_GET_TEMPLATE(pd)
 
-    // int drv_fpioa_set_pin_pu(int pin, int value);
-    DRV_FPIOA_SET_TEMPLATE(pu)
-    // int drv_fpioa_get_pin_pu(int pin);
-    DRV_FPIOA_GET_TEMPLATE(pu)
+// int drv_fpioa_set_pin_pu(int pin, int value);
+DRV_FPIOA_SET_TEMPLATE(pu)
+// int drv_fpioa_get_pin_pu(int pin);
+DRV_FPIOA_GET_TEMPLATE(pu)
 
-    // int drv_fpioa_set_pin_oe(int pin, int value);
-    DRV_FPIOA_SET_TEMPLATE(oe)
-    // int drv_fpioa_get_pin_oe(int pin);
-    DRV_FPIOA_GET_TEMPLATE(oe)
+// int drv_fpioa_set_pin_oe(int pin, int value);
+DRV_FPIOA_SET_TEMPLATE(oe)
+// int drv_fpioa_get_pin_oe(int pin);
+DRV_FPIOA_GET_TEMPLATE(oe)
 
-    // int drv_fpioa_set_pin_ie(int pin, int value);
-    DRV_FPIOA_SET_TEMPLATE(ie)
-    // int drv_fpioa_get_pin_ie(int pin);
-    DRV_FPIOA_GET_TEMPLATE(ie)
+// int drv_fpioa_set_pin_ie(int pin, int value);
+DRV_FPIOA_SET_TEMPLATE(ie)
+// int drv_fpioa_get_pin_ie(int pin);
+DRV_FPIOA_GET_TEMPLATE(ie)
 
 #ifdef __cplusplus
 }

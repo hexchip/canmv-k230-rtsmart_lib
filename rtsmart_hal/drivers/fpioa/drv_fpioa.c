@@ -38,12 +38,6 @@
 
 #pragma pack(1)
 
-typedef struct _fpioa_func_cfg {
-    fpioa_func_t func;
-    const char*  name;
-    uint32_t     cfg;
-} fpioa_func_cfg_t;
-
 static const fpioa_func_cfg_t g_func_describ_array[] = {
     { BOOT0, "BOOT0", 0x101 },
     { BOOT1, "BOOT1", 0x101 },
