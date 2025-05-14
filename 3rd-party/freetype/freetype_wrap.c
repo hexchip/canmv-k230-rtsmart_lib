@@ -106,7 +106,7 @@ static int freetype_wrap_init(const char* font_path)
         return FREETYPE_WRAP_ERR_INIT_FREETYPE_FAILED;
     }
 
-    error = FTC_Manager_New(s_ft_library, 1, 0, 1024 * 64, &ftwrap_face_requester, NULL, &s_ft_cacheManager);
+    error = FTC_Manager_New(s_ft_library, 4, 4, 1024 * 64, &ftwrap_face_requester, NULL, &s_ft_cacheManager);
     if (error) {
         printf("FTC_Manager_New failed %d\n", error);
 
