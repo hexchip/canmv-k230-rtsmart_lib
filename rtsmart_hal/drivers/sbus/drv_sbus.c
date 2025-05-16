@@ -75,11 +75,35 @@ struct sbus_device
     sbus_flag_t flags;
 };
 
+bool is_valid_uart_path(const char *path)
+{
+    const char *valid_paths[] =
+    {
+        "/dev/uart1",
+        "/dev/uart2",
+        "/dev/uart3",
+        "/dev/uart4",
+        NULL
+    };
+
+    for (int i = 0; valid_paths[i] != NULL; i++) {
+        if (strcmp(path, valid_paths[i]) == 0) {
+            return true;
+        }
+    }
+
+    return false;
+}
 
 sbus_dev_t sbus_create(const char *uart)
 {
     sbus_dev_t dev;
     struct uart_configure config;
+
+    if (!is_valid_uart_path(uart)) {
+        printf("pls use /dev/uart1 ~ /dev/uart4\n");
+        goto err1;
+    }
 
     dev = malloc(sizeof(struct sbus_device));
     if (!dev) {
