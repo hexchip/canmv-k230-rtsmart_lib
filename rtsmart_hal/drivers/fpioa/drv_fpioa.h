@@ -362,6 +362,9 @@ DRV_FPIOA_SET_TEMPLATE(ie)
 // int drv_fpioa_get_pin_ie(int pin);
 DRV_FPIOA_GET_TEMPLATE(ie)
 
+#undef DRV_FPIOA_SET_TEMPLATE
+#undef DRV_FPIOA_GET_TEMPLATE
+
 #ifdef __cplusplus
 }
 #endif

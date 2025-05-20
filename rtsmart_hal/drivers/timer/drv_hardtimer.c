@@ -76,7 +76,7 @@ static int timer_in_use[KD_TIMER_MAX_NUM];
 
 static int drv_timer_open(int id)
 {
-    char dev_name[63];
+    char dev_name[64];
 
     if (KD_TIMER_MAX_NUM <= id) {
         printf("invalid timer id %d\n", id);
@@ -113,11 +113,11 @@ int drv_hard_timer_inst_create(int id, drv_hard_timer_inst_t** inst)
     }
 
     if (timer_in_use[id]) {
-        printf("timer maybe in use\n");
+        printf("timer%d maybe in use\n", id);
     }
 
     if (*inst) {
-        free(*inst);
+        drv_hard_timer_inst_destroy(inst);
         *inst = NULL;
     }
 

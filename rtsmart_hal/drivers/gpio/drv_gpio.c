@@ -123,7 +123,7 @@ int drv_gpio_inst_create(int pin, drv_gpio_inst_t** inst)
     }
 
     if (*inst) {
-        free(*inst);
+        drv_gpio_inst_destroy(inst);
         *inst = NULL;
     }
 

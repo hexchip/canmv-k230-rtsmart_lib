@@ -82,7 +82,7 @@ int drv_soft_timer_create(drv_soft_timer_inst_t** inst)
     }
 
     if (*inst) {
-        free(*inst);
+        drv_soft_timer_destroy(inst);
         *inst = NULL;
     }
 
@@ -128,7 +128,7 @@ void drv_soft_timer_destroy(drv_soft_timer_inst_t** inst)
 
     if ((*inst)->timerid) {
         timer_delete((*inst)->timerid);
-        (*inst)->timerid = -1;
+        (*inst)->timerid = NULL;
     }
 
     sa.sa_handler   = SIG_IGN;
