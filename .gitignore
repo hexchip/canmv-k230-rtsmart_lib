@@ -2,3 +2,4 @@ out
 k230_bin
 *.o
 *.o.d
+test_*.elf

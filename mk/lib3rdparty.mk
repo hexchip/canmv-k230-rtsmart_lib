@@ -1,6 +1,6 @@
-rtsmart_3rd_party_lib_dir := $(SDK_RTSMART_BUILD_DIR)/libs/3rd-party/lib
-rtsmart_3rd_party_inc_dir := $(SDK_RTSMART_BUILD_DIR)/libs/3rd-party/include
+inc_dir := $(SDK_RTSMART_BUILD_DIR)/libs/3rd-party/include
+lib_dir := $(SDK_RTSMART_BUILD_DIR)/libs/3rd-party/lib
 
-RTSMART_3RD_PARTY_INC := -I$(rtsmart_3rd_party_inc_dir)
-RTSMART_3RD_PARTY_LIBS := $(addprefix -l,$(subst lib, ,$(basename $(notdir $(foreach dir, $(rtsmart_3rd_party_lib_dir), $(wildcard $(dir)/*))))))
-RTSMART_3RD_PARTY_LIB_DIR := $(addprefix -L, $(rtsmart_3rd_party_lib_dir))
+LIB_CFLAGS += $(addprefix -I, $(inc_dir))
+LIB_LDFLAGS += $(addprefix -L, $(lib_dir)) 
+LIB_LDFLAGS += -Wl,--start-group $(addprefix -l,$(subst lib, ,$(basename $(notdir $(foreach dir, $(lib_dir), $(wildcard $(dir)/*)))))) -Wl,--end-group
