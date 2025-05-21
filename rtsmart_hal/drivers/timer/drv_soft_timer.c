@@ -123,6 +123,15 @@ void drv_soft_timer_destroy(drv_soft_timer_inst_t** inst)
 {
     struct sigaction sa;
 
+    if(NULL == *inst) {
+        return;
+    }
+
+    if((void*)&soft_timer_type != (*inst)->base) {
+        printf("inst not soft timer\n");
+        return;
+    }
+
     drv_soft_timer_stop(*inst);
     drv_soft_timer_unregister_irq(*inst);
 

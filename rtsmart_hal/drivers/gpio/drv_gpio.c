@@ -113,8 +113,15 @@ static inline int drv_gpio_ioctl(int cmd, void* arg)
 
 int drv_gpio_inst_create(int pin, drv_gpio_inst_t** inst)
 {
+    fpioa_func_t pin_curr_func;
+
     if (GPIO_MAX_NUM <= pin) {
         printf("invalid pin %d\n", pin);
+        return -1;
+    }
+
+    if((0x00 != drv_fpioa_get_pin_func(pin, &pin_curr_func)) || (pin_curr_func != (GPIO0 + pin))) {
+        printf("pin %d current fucntion not GPIO\n", pin);
         return -1;
     }
 
@@ -148,6 +155,11 @@ int drv_gpio_inst_create(int pin, drv_gpio_inst_t** inst)
 void drv_gpio_inst_destroy(drv_gpio_inst_t** inst)
 {
     if (!*inst) {
+        return;
+    }
+
+    if((void*)&gpio_inst_type != (*inst)->base) {
+        printf("inst not gpio\n");
         return;
     }
 

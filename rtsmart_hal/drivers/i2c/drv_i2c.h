@@ -32,9 +32,11 @@ extern "C" {
 
 #define KD_HARD_I2C_MAX_NUM (5)
 
-#define DRV_I2C_TYPE_HARD (0x01)
-#define DRV_I2C_TYPE_SOFT (0x02)
+#define DRV_I2C_TYPE_HARD  (0x01)
+#define DRV_I2C_TYPE_SOFT  (0x02)
+#define DRV_I2C_TYPE_SLAVE (0x03)
 
+/* flag for master */
 #define DRV_I2C_WR          0x0000
 #define DRV_I2C_RD          (1u << 0)
 #define DRV_I2C_ADDR_10BIT  (1u << 2) /* this is a ten bit chip address */
@@ -43,15 +45,23 @@ extern "C" {
 #define DRV_I2C_NO_READ_ACK (1u << 6) /* when I2C reading, we do not ACK */
 #define DRV_I2C_NO_STOP     (1u << 7)
 
+// typedef struct _drv_i2c_pin_cfg {
+//     uint8_t pin_scl;
+//     uint8_t pin_sda;
+// } drv_i2c_pin_cfg_t;
+
+// int drv_i2c_get_default_pins(int id, drv_i2c_pin_cfg_t *pins);
+// int drv_i2c_install_pins(int id, drv_i2c_pin_cfg_t* pins);
+
+/** definitions for i2c master ***********************************************/
+
 typedef struct _drv_i2c_inst {
     void* base;
 
     int type, id, fd;
 
-    struct {
-        uint8_t pin_scl;
-        uint8_t pin_sda;
-    } soft;
+    uint8_t pin_scl;
+    uint8_t pin_sda;
 
     uint32_t freq;
     uint32_t timeout_ms;
@@ -64,8 +74,7 @@ typedef struct _i2c_msg {
     uint8_t* buf;
 } i2c_msg_t;
 
-int drv_i2c_inst_create(int id, uint32_t freq, uint32_t timeout_ms, drv_i2c_inst_t** inst);
-int drv_i2c_inst_create_ex(int id, uint32_t freq, uint32_t timeout_ms, uint8_t scl, uint8_t sda, drv_i2c_inst_t** inst);
+int drv_i2c_inst_create(int id, uint32_t freq, uint32_t timeout_ms, uint8_t scl, uint8_t sda, drv_i2c_inst_t** inst);
 void drv_i2c_inst_destroy(drv_i2c_inst_t** inst);
 
 int drv_i2c_set_7b_addr(drv_i2c_inst_t* inst);
@@ -77,9 +86,9 @@ int drv_i2c_transfer(drv_i2c_inst_t* inst, i2c_msg_t* msgs, int msg_cnt);
 
 #define MEMBER_TYPE(struct_type, member) typeof(((struct_type*)0)->member)
 
-#define DRV_I2C_GET_ATTR_TEMPLATE(struct_type, member)                                                                 \
+#define DRV_I2C_GET_ATTR_TEMPLATE(struct_type, member, type)                                                           \
     static inline __attribute__((always_inline)) MEMBER_TYPE(struct_type, member)                                      \
-        drv_i2c_get_##member(struct_type* inst)                                                                        \
+        drv_i2c_##type##_get_##member(struct_type* inst)                                                               \
     {                                                                                                                  \
         if (!inst) {                                                                                                   \
             return -1;                                                                                                 \
@@ -87,17 +96,61 @@ int drv_i2c_transfer(drv_i2c_inst_t* inst, i2c_msg_t* msgs, int msg_cnt);
         return inst->member;                                                                                           \
     }
 
-// uint32_t drv_i2c_get_tupe(drv_i2c_inst_t *inst);
-DRV_I2C_GET_ATTR_TEMPLATE(drv_i2c_inst_t, type)
+// uint32_t drv_i2c_master_get_type(drv_i2c_inst_t *inst);
+DRV_I2C_GET_ATTR_TEMPLATE(drv_i2c_inst_t, type, master)
 
-// int drv_i2c_get_id(drv_i2c_inst_t *inst);
-DRV_I2C_GET_ATTR_TEMPLATE(drv_i2c_inst_t, id)
+// int drv_i2c_master_get_id(drv_i2c_inst_t *inst);
+DRV_I2C_GET_ATTR_TEMPLATE(drv_i2c_inst_t, id, master)
 
-// int drv_i2c_get_fd(drv_i2c_inst_t *inst);
-DRV_I2C_GET_ATTR_TEMPLATE(drv_i2c_inst_t, fd)
+// int drv_i2c_master_get_fd(drv_i2c_inst_t *inst);
+DRV_I2C_GET_ATTR_TEMPLATE(drv_i2c_inst_t, fd, master)
 
-// int drv_i2c_get_freq(drv_i2c_inst_t *inst);
-DRV_I2C_GET_ATTR_TEMPLATE(drv_i2c_inst_t, freq)
+// uint32_t drv_i2c_master_get_freq(drv_i2c_inst_t *inst);
+DRV_I2C_GET_ATTR_TEMPLATE(drv_i2c_inst_t, freq, master)
+
+// uint32_t drv_i2c_master_get_timeout_ms(drv_i2c_inst_t *inst);
+DRV_I2C_GET_ATTR_TEMPLATE(drv_i2c_inst_t, timeout_ms, master)
+
+// uint8_t drv_i2c_master_get_pin_scl(drv_i2c_inst_t *inst);
+DRV_I2C_GET_ATTR_TEMPLATE(drv_i2c_inst_t, pin_scl, master)
+
+// uint8_t drv_i2c_master_get_pin_sda(drv_i2c_inst_t *inst);
+DRV_I2C_GET_ATTR_TEMPLATE(drv_i2c_inst_t, pin_sda, master)
+
+/** definitions for i2c slave ************************************************/
+
+typedef struct _drv_i2c_slave_inst {
+    void* base;
+
+    int id, fd;
+
+    uint8_t pin_scl;
+    uint8_t pin_sda;
+
+    uint32_t buffer_size;
+    uint16_t slave_address;
+} drv_i2c_slave_inst_t;
+
+int drv_i2c_slave_inst_create(int id, uint32_t buffer_size, uint16_t slave_address, uint8_t scl, uint8_t sda,
+                              drv_i2c_slave_inst_t** inst);
+
+// int drv_i2c_slave_get_id(drv_i2c_slave_inst_t *inst);
+DRV_I2C_GET_ATTR_TEMPLATE(drv_i2c_slave_inst_t, id, slave)
+
+// int drv_i2c_slave_get_fd(drv_i2c_slave_inst_t *inst);
+DRV_I2C_GET_ATTR_TEMPLATE(drv_i2c_slave_inst_t, fd, slave)
+
+// uint8_t drv_i2c_slave_get_pin_scl(drv_i2c_inst_t *inst);
+DRV_I2C_GET_ATTR_TEMPLATE(drv_i2c_inst_t, pin_scl, slave)
+
+// uint8_t drv_i2c_slave_get_pin_sda(drv_i2c_inst_t *inst);
+DRV_I2C_GET_ATTR_TEMPLATE(drv_i2c_inst_t, pin_sda, slave)
+
+// uint32_t drv_i2c_slave_get_buffer_size(drv_i2c_slave_inst_t *inst);
+DRV_I2C_GET_ATTR_TEMPLATE(drv_i2c_slave_inst_t, buffer_size, slave)
+
+// uint16_t drv_i2c_slave_get_slave_address(drv_i2c_slave_inst_t *inst);
+DRV_I2C_GET_ATTR_TEMPLATE(drv_i2c_slave_inst_t, slave_address, slave)
 
 #undef DRV_I2C_GET_ATTR_TEMPLATE
 #undef MEMBER_TYPE

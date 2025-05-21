@@ -34,6 +34,8 @@
 #include <unistd.h>
 
 #include "canmv_misc.h"
+#include "drv_fpioa.h"
+
 #include "drv_i2c.h"
 
 #define RT_I2C_DEV_CTRL_10BIT (8 * 0x100 + 0x01)
@@ -50,19 +52,14 @@ static int hard_i2c_in_use[KD_HARD_I2C_MAX_NUM];
 static int drv_i2c_ioctl(drv_i2c_inst_t* inst, int cmd, void* arg)
 {
     if ((NULL == inst) || (0x00 > inst->fd)) {
-        printf("timer not open\n");
+        printf("i2c device not open\n");
         return -1;
     }
 
     return ioctl(inst->fd, cmd, arg);
 }
 
-int drv_i2c_inst_create(int id, uint32_t freq, uint32_t timeout_ms, drv_i2c_inst_t** inst)
-{
-    return drv_i2c_inst_create_ex(id, freq, timeout_ms, 0xFF, 0xFF, inst);
-}
-
-int drv_i2c_inst_create_ex(int id, uint32_t freq, uint32_t timeout_ms, uint8_t scl, uint8_t sda, drv_i2c_inst_t** inst)
+int drv_i2c_inst_create(int id, uint32_t freq, uint32_t timeout_ms, uint8_t scl, uint8_t sda, drv_i2c_inst_t** inst)
 {
     int  fd = -1;
     char dev_name[64];
@@ -117,14 +114,14 @@ int drv_i2c_inst_create_ex(int id, uint32_t freq, uint32_t timeout_ms, uint8_t s
     }
     memset(*inst, 0x00, sizeof(drv_i2c_inst_t));
 
-    (*inst)->base         = (void*)&i2c_master_inst_type;
-    (*inst)->type         = dev_type;
-    (*inst)->id           = id;
-    (*inst)->fd           = fd;
-    (*inst)->soft.pin_scl = soft_scl;
-    (*inst)->soft.pin_sda = soft_sda;
-    (*inst)->freq         = freq;
-    (*inst)->timeout_ms   = timeout_ms;
+    (*inst)->base       = (void*)&i2c_master_inst_type;
+    (*inst)->type       = dev_type;
+    (*inst)->id         = id;
+    (*inst)->fd         = fd;
+    (*inst)->pin_scl    = soft_scl;
+    (*inst)->pin_sda    = soft_sda;
+    (*inst)->freq       = freq;
+    (*inst)->timeout_ms = timeout_ms;
 
     if (DRV_I2C_TYPE_HARD == dev_type) {
         hard_i2c_in_use[id] = 1;
@@ -137,6 +134,11 @@ void drv_i2c_inst_destroy(drv_i2c_inst_t** inst)
 {
     int id, type, fd;
     if (NULL == (*inst)) {
+        return;
+    }
+
+    if ((void*)&i2c_master_inst_type != (*inst)->base) {
+        printf("inst not i2c master\n");
         return;
     }
 
@@ -236,5 +238,94 @@ int drv_i2c_transfer(drv_i2c_inst_t* inst, i2c_msg_t* msgs, int msg_cnt)
     priv.msgs   = msgs;
     priv.number = msg_cnt;
 
+    if (0x00 == msg_cnt) {
+        return 0;
+    }
+
     return drv_i2c_ioctl(inst, RT_I2C_DEV_CTRL_RW, &priv);
 }
+
+// /** drv_i2c default pins *****************************************************/
+// #include "generated/autoconf.h"
+
+// static const drv_i2c_pin_cfg_t drv_i2c_dft_pins[KD_HARD_I2C_MAX_NUM] = {
+//     {
+//         .pin_scl = CONFIG_RT_SMART_HAL_DRV_I2C0_PIN_SCL_DFT,
+//         .pin_sda = CONFIG_RT_SMART_HAL_DRV_I2C0_PIN_SDA_DFT,
+//     },
+//     {
+//         .pin_scl = CONFIG_RT_SMART_HAL_DRV_I2C1_PIN_SCL_DFT,
+//         .pin_sda = CONFIG_RT_SMART_HAL_DRV_I2C1_PIN_SDA_DFT,
+//     },
+//     {
+//         .pin_scl = CONFIG_RT_SMART_HAL_DRV_I2C2_PIN_SCL_DFT,
+//         .pin_sda = CONFIG_RT_SMART_HAL_DRV_I2C2_PIN_SDA_DFT,
+//     },
+//     {
+//         .pin_scl = CONFIG_RT_SMART_HAL_DRV_I2C3_PIN_SCL_DFT,
+//         .pin_sda = CONFIG_RT_SMART_HAL_DRV_I2C3_PIN_SDA_DFT,
+//     },
+//     {
+//         .pin_scl = CONFIG_RT_SMART_HAL_DRV_I2C4_PIN_SCL_DFT,
+//         .pin_sda = CONFIG_RT_SMART_HAL_DRV_I2C4_PIN_SDA_DFT,
+//     },
+// };
+
+// int drv_i2c_get_default_pin(int id, drv_i2c_pin_cfg_t* pins)
+// {
+//     if ((0 > id) || (KD_HARD_I2C_MAX_NUM <= id)) {
+//         printf("invalid i2c id\n");
+//         return -1;
+//     }
+
+//     if (pins) {
+//         memcpy(pins, &drv_i2c_dft_pins[id], sizeof(drv_i2c_pin_cfg_t));
+//     }
+
+//     return 0;
+// }
+
+// int drv_i2c_install_pins(int id, drv_i2c_pin_cfg_t* pins)
+// {
+//     uint8_t      pin_scl, pin_sda;
+//     fpioa_func_t func_scl, func_sda;
+
+//     if ((0 > id) || (KD_HARD_I2C_MAX_NUM <= id) || (NULL == pins)) {
+//         printf("invalid i2c id\n");
+//         return -1;
+//     }
+
+//     pin_scl = pins->pin_scl;
+//     pin_sda = pins->pin_sda;
+
+//     if ((0x00 != drv_fpioa_get_pin_func(pin_scl, &func_scl)) || (0x00 != drv_fpioa_get_pin_func(pin_scl, &func_sda))) {
+//         printf("get pin func failed.\n");
+//         return -2;
+//     }
+
+//     if ((GPIO63 < func_scl) && (func_scl != (IIC0_SCL + id * 2))) {
+//         printf("pin %d can not set to scl\n", pin_scl);
+//         return -3;
+//     }
+
+//     if ((GPIO63 < func_sda) && (func_sda != (IIC0_SDA + id * 2))) {
+//         printf("pin %d can not set to sda\n", pin_sda);
+//         return -3;
+//     }
+
+//     if (GPIO63 < func_scl) {
+//         if (0x00 != drv_fpioa_set_pin_func(pin_scl, (IIC0_SCL + id * 2))) {
+//             printf("set pin %d to scl failed\n", pin_scl);
+//             return -4;
+//         }
+//     }
+
+//     if (GPIO63 < func_sda) {
+//         if (0x00 != drv_fpioa_set_pin_func(pin_sda, (IIC0_SDA + id * 2))) {
+//             printf("set pin %d to sda failed\n", pin_sda);
+//             return -4;
+//         }
+//     }
+
+//     return 0;
+// }

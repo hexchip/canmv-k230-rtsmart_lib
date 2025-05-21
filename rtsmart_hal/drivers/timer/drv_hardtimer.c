@@ -147,6 +147,11 @@ void drv_hard_timer_inst_destroy(drv_hard_timer_inst_t** inst)
     if (NULL == (*inst)) {
         return;
     }
+    
+    if((void*)&timer_inst_type != (*inst)->base) {
+        printf("inst not hard timer\n");
+        return;
+    }
 
     id = (*inst)->id;
 
