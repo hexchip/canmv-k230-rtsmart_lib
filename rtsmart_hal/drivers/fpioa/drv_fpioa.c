@@ -370,6 +370,7 @@ int drv_fpioa_set_pin_func(int pin, fpioa_func_t func)
                         continue;
                     }
                     cfg.u.value   = 0;
+                    cfg.u.bit.io_sel = 0;
                     cfg.u.bit.msc = cfg_tmp.u.bit.msc;
 
                     drv_fpioa_set_pin_cfg(alt_pins[i], cfg.u.value);
