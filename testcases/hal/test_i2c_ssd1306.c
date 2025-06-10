@@ -135,13 +135,19 @@ static void draw_test_pattern(void)
 
 int main()
 {
-    drv_i2c_inst_t* i2c = NULL;
+    drv_i2c_inst_t* i2c       = NULL;
+    uint32_t        i2c_clock = 400 * 1000;
 
     drv_fpioa_set_pin_func(11, IIC2_SCL);
     drv_fpioa_set_pin_func(12, IIC2_SDA);
 
+    printf("K230 OLED Test Configuration:\n");
+    printf("  PIN11 -> SCL\n");
+    printf("  PIN12 -> SDA\n");
+    printf("  I2C Bus: %d, Frequency: %d Hz\n", 2, i2c_clock);
+
     // Initialize I2C (adjust I2C ID/freq per your hardware)
-    if (drv_i2c_inst_create(2, 400 * 1000, 1000, &i2c) < 0) { // 400kHz, 1s timeout
+    if (drv_i2c_inst_create(2, i2c_clock, 1000, 0xff, 0xff, &i2c) < 0) { // 400kHz, 1s timeout
         printf("I2C init failed!\n");
         return -1;
     }

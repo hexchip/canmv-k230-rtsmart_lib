@@ -1,0 +1,72 @@
+# Include base configuration
+include ../../mkenv.mk
+include ../../toolchain.mk
+
+# Build configuration
+BUILD := $(SDK_RTSMART_BUILD_DIR)/testcases/rtsmart_hal/
+OBJ_DIRS = $(sort $(dir $(PROGRAMS)))
+
+# Source files handling
+CFILES := $(wildcard *.c)
+OBJS := $(patsubst %, $(BUILD)/%, $(CFILES:.c=.o))
+PROGRAMS := $(patsubst %, $(BUILD)/%, $(CFILES:.c=.elf))
+PROGRAMDEPS := $(patsubst %, $(BUILD)/%, $(CFILES:.c=.o.d))
+
+# Library configuration
+include $(SDK_RTSMART_SRC_DIR)/libs/mk/librtsmart_hal.mk
+
+# Compiler flags
+CFLAGS := -std=gnu99 -fopenmp -march=rv64imafdcv -mabi=lp64d -mcmodel=medany
+CFLAGS += -I. $(LIB_CFLAGS)
+CFLAGS += -Wall -Wextra
+CFLAGS += -ffunction-sections -fdata-sections
+
+# Linker flags - removed --static unless specifically needed
+LDFLAGS := -T $(SDK_RTSMART_SRC_DIR)/libs/mk/link.lds --static -Wl,--gc-sections
+LDFLAGS += $(LIB_LDFLAGS)
+# LDFLAGS += -Wl,--print-gc-sections
+
+# Phony targets
+.PHONY: all clean distclean check_path
+
+all: check_path $(PROGRAMS)
+	@echo "[SUCCESS] Built all RTSmart HAL testcases"
+
+clean:
+	@echo "Cleaning build artifacts..."
+	@rm -rf $(BUILD)
+
+distclean: clean
+	@echo "Cleaning installed binaries..."
+	@rm -f $(RTSMART_LIBS_ELF_INSTALL_PATH)/*.elf
+
+# Directory creation
+$(OBJ_DIRS):
+	@mkdir -p $@
+
+# Compilation rule
+$(BUILD)/%.o: %.c | $(OBJ_DIRS)
+	@echo "[CC] $< -> $@"
+	@$(CC) $(CFLAGS) -MD -MP -MF $(@:.o=.d) -c $< -o $@
+
+# Linking rule - separated from compilation
+$(BUILD)/%.elf: $(BUILD)/%.o
+	@echo "[LD] $< -> $@"
+	@$(CC) $(CFLAGS) $< $(LDFLAGS) -o $@
+	@$(STRIP) $@
+	@cp $@ $(RTSMART_LIBS_ELF_INSTALL_PATH)
+	@echo "[INSTALLED] $@ to $(RTSMART_LIBS_ELF_INSTALL_PATH)"
+
+# Path verification
+check_path:
+	@if [ -z "$(RTSMART_LIBS_ELF_INSTALL_PATH)" ]; then \
+		echo "Error: RTSMART_LIBS_ELF_INSTALL_PATH is not set"; \
+		exit 1; \
+	fi
+	@if [ ! -d "$(RTSMART_LIBS_ELF_INSTALL_PATH)" ]; then \
+		echo "Creating install directory: $(RTSMART_LIBS_ELF_INSTALL_PATH)"; \
+		mkdir -p "$(RTSMART_LIBS_ELF_INSTALL_PATH)"; \
+	fi
+
+# Include dependencies
+-include $(PROGRAMDEPS)

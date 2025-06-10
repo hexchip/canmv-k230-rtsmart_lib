@@ -1,8 +1,6 @@
-include mkenv.mk
+include ../mkenv.mk
 
-subdirs-y := rtsmart_hal 3rd-party
-
-subdirs-$(CONFIG_RTSMART_LIBS_ENABLE_TESTCASES) += testcases
+subdirs-y := hal
 
 .PHONY: all clean distclean
 
