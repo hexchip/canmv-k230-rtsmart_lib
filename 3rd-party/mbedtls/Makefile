@@ -3,6 +3,9 @@ include ../../toolchain.mk
 
 include $(SDK_SRC_ROOT_DIR)/.config
 
+LIB_CFLAGS :=
+LIB_LDFLAGS :=
+
 include $(SDK_RTSMART_SRC_DIR)/libs/mk/librtsmart_hal.mk
 
 DIR = $(shell basename `pwd`)
@@ -43,9 +46,9 @@ DEPS	:= $(CDEPS) $(CXXDEPS)
 
 CFLAGS_MBEDTLS := -march=rv64imafdcv -mabi=lp64d -mcmodel=medany -Os -n --static
 CFLAGS_MBEDTLS += -DMBEDTLS_USER_CONFIG_FILE=\"mbedtls_port_config.h\"
-CFLAGS_MBEDTLS += -I$(LOCAL_SRC_DIR)/port $(RTSMART_HAL_INC)
+CFLAGS_MBEDTLS += -I$(LOCAL_SRC_DIR)/port $(LIB_CFLAGS)
 
-LDFLAGS_MBEDTLS := -n --static -T $(LOCAL_SRC_DIR)/port/link.lds -L$(RTSMART_3RD_PARTY_LIB_INSTALL_PATH) -lmbedtls_port $(RTSMART_HAL_LIB_DIR) $(RTSMART_HAL_LIBS)
+LDFLAGS_MBEDTLS := -n --static -T $(LOCAL_SRC_DIR)/port/link.lds -L$(RTSMART_3RD_PARTY_LIB_INSTALL_PATH) -lmbedtls_port $(LIB_CFLAGS) $(LIB_LDFLAGS)
 
 .PHONY: mbedtls_library
 mbedtls_library:
