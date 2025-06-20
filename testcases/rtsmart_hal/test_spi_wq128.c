@@ -295,7 +295,7 @@ static w25q128_t* w25q_create(int spi_id, int cs_pin, uint32_t baudrate)
 
     memset(flash, 0, sizeof(w25q128_t));
 
-    // 初始化SPI (50MHz, Mode 0: CPOL=0, CPHA=0)
+    // 初始化SPI (Mode 0: CPOL=0, CPHA=0)
     ret = drv_spi_inst_create(spi_id, true, SPI_HAL_MODE_0, baudrate,
                                             8, cs_pin, SPI_HAL_DATA_LINE_1, &flash->spi_handle);
 
