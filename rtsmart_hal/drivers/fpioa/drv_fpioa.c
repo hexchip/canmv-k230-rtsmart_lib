@@ -243,7 +243,7 @@ static volatile uint32_t* check_fpioa(void)
         int mem_fd = -1;
         if (0 > mem_fd) {
             if (0 > (mem_fd = open("/dev/mem", O_RDWR | O_SYNC))) {
-                printf("open /dev/mem failed\n");
+                printf("[hal_fpioa]: open /dev/mem failed\n");
                 return NULL;
             }
         }
@@ -254,7 +254,7 @@ static volatile uint32_t* check_fpioa(void)
         mem_fd = -1;
 
         if (fpioa_reg == NULL) {
-            printf("mmap fpioa failed\n");
+            printf("[hal_fpioa]: mmap fpioa failed\n");
             return NULL;
         }
     }
@@ -306,18 +306,18 @@ int drv_fpioa_get_pin_func(int pin, fpioa_func_t* func)
     const uint8_t*    avail_func = NULL;
 
     if (FPIOA_PIN_MAX_NUM <= pin) {
-        printf("invalid pin %d\n", pin);
+        printf("[hal_fpioa]: invalid pin %d\n", pin);
         return -1;
     }
 
     if (0x00 != drv_fpioa_get_pin_cfg(pin, &cfg.u.value)) {
-        printf("get pin cfg failed.\n");
+        printf("[hal_fpioa]: get pin cfg failed.\n");
         return -1;
     }
 
     sel = cfg.u.bit.io_sel;
     if (FPIOA_PIN_MAX_FUNCS <= sel) {
-        printf("invalid pin sel.\n");
+        printf("[hal_fpioa]: invalid pin sel.\n");
         return -1;
     }
 
@@ -357,7 +357,7 @@ int drv_fpioa_set_pin_func(int pin, fpioa_func_t func)
     }
 
     if (0x00 == found) {
-        printf("pin %d unsupport func %d\n", pin, func);
+        printf("[hal_fpioa]: pin %d unsupport func %d\n", pin, func);
         return -1;
     }
 
@@ -366,7 +366,7 @@ int drv_fpioa_set_pin_func(int pin, fpioa_func_t func)
             if (0 != drv_fpioa_get_pin_func(alt_pins[i], &alt_pin_curr_func)) {
                 if (alt_pin_curr_func == func) {
                     if (0x00 != drv_fpioa_get_pin_cfg(alt_pins[i], &cfg_tmp.u.value)) {
-                        printf("get pin %d cfg failed.\n", alt_pins[i]);
+                        printf("[hal_fpioa]: get pin %d cfg failed.\n", alt_pins[i]);
                         continue;
                     }
                     cfg.u.value   = 0;
@@ -380,14 +380,14 @@ int drv_fpioa_set_pin_func(int pin, fpioa_func_t func)
     }
 
     if (NULL == (func_cfg = drv_fpioa_get_func_cfg(func))) {
-        printf("unsupport func %d\n", func);
+        printf("[hal_fpioa]: unsupport func %d\n", func);
         return -1;
     }
     cfg.u.value      = func_cfg->cfg;
     cfg.u.bit.io_sel = func_sel;
 
     if (0x00 != drv_fpioa_get_pin_cfg(pin, &cfg_tmp.u.value)) {
-        printf("get pin cfg %d failed\n", pin);
+        printf("[hal_fpioa]: get pin cfg %d failed\n", pin);
         return -1;
     }
     cfg.u.bit.msc    = cfg_tmp.u.bit.msc;
@@ -408,7 +408,7 @@ int drv_fpioa_func_available_pins(fpioa_func_t func, int pins[FPIOA_PIN_FUNC_ALT
                 pins[pin_cnt++] = i;
 
                 if (FPIOA_PIN_FUNC_ALT_NUM <= pin_cnt) {
-                    printf("too many pins\n");
+                    printf("[hal_fpioa]: too many pins\n");
                     return pin_cnt;
                 }
                 break;

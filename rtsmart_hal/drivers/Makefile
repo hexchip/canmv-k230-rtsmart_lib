@@ -1,6 +1,6 @@
 include ../../mkenv.mk
 
-subdirs-y := fpioa gpio timer sbus i2c adc tsensor wdt spi
+subdirs-y := fpioa gpio timer sbus i2c adc tsensor wdt spi pwm
 
 .PHONY: all clean distclean
 

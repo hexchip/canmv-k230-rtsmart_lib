@@ -91,45 +91,45 @@ int drv_spi_inst_create(int spi_id, bool active_low, int mode, uint32_t baudrate
     static uint64_t idx;
 
     if (spi_id < 0 || spi_id >= SPI_HAL_MAX_DEVICES) {
-        printf("invalid spi id, range in [0 ~ %d]\n", SPI_HAL_MAX_DEVICES - 1);
+        printf("[hal_spi]: invalid spi id, range in [0 ~ %d]\n", SPI_HAL_MAX_DEVICES - 1);
         goto err_0;
     }
 
     if (mode < SPI_HAL_MODE_0 || mode > SPI_HAL_MODE_3) {
-        printf("invalid spi mode, range in [%d ~ %d]\n", SPI_HAL_MODE_0, SPI_HAL_MODE_3);
+        printf("[hal_spi]: invalid spi mode, range in [%d ~ %d]\n", SPI_HAL_MODE_0, SPI_HAL_MODE_3);
         goto err_0;
     }
 
     if (data_bits < 4 || data_bits > 32) {
-        printf("invalid data bits, range in [4 ~ 32]\n");
+        printf("[hal_spi]: invalid data bits, range in [4 ~ 32]\n");
         goto err_0;
     }
 
     if (data_line != SPI_HAL_DATA_LINE_1 && data_line != SPI_HAL_DATA_LINE_2 &&
         data_line != SPI_HAL_DATA_LINE_4 && data_line != SPI_HAL_DATA_LINE_8) {
-        printf("invalid data line, only support 1/2/4 line spi\n");
+        printf("[hal_spi]: invalid data line, only support 1/2/4 line spi\n");
         goto err_0;
     }
 
     if (data_line == SPI_HAL_DATA_LINE_8 && spi_id != 0) {
-        printf("invalid data line, only spi0 support 8 line spi\n");
+        printf("[hal_spi]: invalid data line, only spi0 support 8 line spi\n");
         goto err_0;
     }
 
     if (cs_pin < 0 || cs_pin > 63) {
-        printf("invalid soft cs (0x%x),range in [0x%x ~ 0x%x]\n",
+        printf("[hal_spi]: invalid soft cs (0x%x),range in [0x%x ~ 0x%x]\n",
                cs_pin, 0, 63);
         goto err_0;
     }
 
     if (inst == NULL) {
-        printf("NULL poionter unsupport\n");
+        printf("[hal_spi]: NULL poionter unsupport\n");
         goto err_0;
     }
 
     *inst = malloc(sizeof(struct drv_spi_inst));
     if (!(*inst)) {
-        printf("malloc drv_spi_inst fail\n");
+        printf("[hal_spi]: malloc drv_spi_inst fail\n");
         goto err_0;
     }
 
@@ -137,16 +137,16 @@ int drv_spi_inst_create(int spi_id, bool active_low, int mode, uint32_t baudrate
     (*inst)->spi_id = spi_id;
 
     if (drv_fpioa_set_pin_func(cs_pin, GPIO0 + cs_pin) != 0) {
-        printf("fail to set cs pin func\n");
+        printf("[hal_spi]: fail to set cs pin func\n");
         goto err_1;
     }
 
     if (drv_gpio_inst_create(cs_pin, &(*inst)->gpio_cs) != 0) {
-        printf("failed to create gpio instance for cs pin\n");
+        printf("[hal_spi]: failed to create gpio instance for cs pin\n");
         goto err_1;
     }
     if (drv_gpio_mode_set((*inst)->gpio_cs, GPIO_DM_OUTPUT) != 0) {
-        printf("failed to set cs pin mode\n");
+        printf("[hal_spi]: failed to set cs pin mode\n");
         goto err_2;
     }
 
@@ -169,7 +169,7 @@ int drv_spi_inst_create(int spi_id, bool active_low, int mode, uint32_t baudrate
 
     (*inst)->dev_fd = open(dev_name, O_RDWR);
     if ((*inst)->dev_fd < 0) {
-        printf("open %s fail in function %s\n", dev_name, __func__);
+        printf("[hal_spi]: open %s fail in function %s\n", dev_name, __func__);
         goto err_2;
     }
 
@@ -194,7 +194,7 @@ int drv_spi_inst_create(int spi_id, bool active_low, int mode, uint32_t baudrate
 
         oneshot = true;
         if ((ret = ioctl((*inst)->dev_fd, RT_SPI_DEV_CTRL_CONFIG, &spi_config))) {
-            printf("spi config fail: %s (errno: %d, ret: %d)\n", strerror(errno), errno, ret);
+            printf("[hal_spi]: spi config fail: %s (errno: %d, ret: %d)\n", strerror(errno), errno, ret);
             goto err_3;
         }
         pthread_spin_lock(&lock[spi_id]);
@@ -242,13 +242,13 @@ int drv_spi_transfer(drv_spi_inst_t inst, const void *tx_data,
     struct rt_qspi_message msg;
 
     if (!inst || inst->dev_fd < 0) {
-        printf("pls drv_spi_inst_create first\n");
+        printf("[hal_spi]: pls drv_spi_inst_create first\n");
         ret = -1;
         goto out;
     }
 
     if (len == 0) {
-        printf("zero len\n");
+        printf("[hal_spi]: zero len\n");
         goto out;
     }
 
@@ -267,7 +267,7 @@ int drv_spi_transfer(drv_spi_inst_t inst, const void *tx_data,
         spi_config.qspi_dl_width = inst->data_line;
 
         if ((ret = ioctl(inst->dev_fd, RT_SPI_DEV_CTRL_CONFIG, &spi_config))) {
-            printf("spi config fail: %s (errno: %d, ret: %d)\n", strerror(errno), errno, ret);
+            printf("[hal_spi]: spi config fail: %s (errno: %d, ret: %d)\n", strerror(errno), errno, ret);
             pthread_spin_unlock(&lock[inst->spi_id]);
             goto out;
         }
@@ -300,7 +300,7 @@ int drv_spi_transfer(drv_spi_inst_t inst, const void *tx_data,
 
     ret = ioctl(inst->dev_fd, RT_SPI_DEV_CTRL_RW, &msg);
     if (ret != (int)len) {
-        printf("spi transfer fail: %s (errno: %d, ret: %d)\n", strerror(errno), errno, ret);
+        printf("[hal_spi]: spi transfer fail: %s (errno: %d, ret: %d)\n", strerror(errno), errno, ret);
     }
 
 out:
@@ -312,13 +312,13 @@ int drv_spi_read(drv_spi_inst_t inst, void *rx_data, size_t len, bool cs_change)
     int ret = 0;
 
     if (!inst || inst->dev_fd < 0) {
-        printf("pls drv_spi_inst_create first\n");
+        printf("[hal_spi]: pls drv_spi_inst_create first\n");
         ret = -1;
         goto out;
     }
 
     if (len == 0) {
-        printf("zero len\n");
+        printf("[hal_spi]: zero len\n");
         goto out;
     }
 
@@ -337,7 +337,7 @@ int drv_spi_read(drv_spi_inst_t inst, void *rx_data, size_t len, bool cs_change)
         spi_config.qspi_dl_width = inst->data_line;
 
         if ((ret = ioctl(inst->dev_fd, RT_SPI_DEV_CTRL_CONFIG, &spi_config))) {
-            printf("spi config fail: %s (errno: %d, ret: %d)\n", strerror(errno), errno, ret);
+            printf("[hal_spi]: spi config fail: %s (errno: %d, ret: %d)\n", strerror(errno), errno, ret);
             pthread_spin_unlock(&lock[inst->spi_id]);
             goto out;
         }
@@ -371,7 +371,7 @@ int drv_spi_read(drv_spi_inst_t inst, void *rx_data, size_t len, bool cs_change)
 
     ret = ioctl(inst->dev_fd, RT_SPI_DEV_CTRL_RW, &msg);
     if (ret != (int)len) {
-        printf("spi single read fail: %s (errno: %d, ret: %d)\n", strerror(errno), errno, ret);
+        printf("[hal_spi]: spi single read fail: %s (errno: %d, ret: %d)\n", strerror(errno), errno, ret);
     }
 
 out:
@@ -383,13 +383,13 @@ int drv_spi_write(drv_spi_inst_t inst, const void *tx_data, size_t len, bool cs_
     int ret = 0;
 
     if (!inst || inst->dev_fd < 0) {
-        printf("pls drv_spi_inst_create first\n");
+        printf("[hal_spi]: pls drv_spi_inst_create first\n");
         ret = -1;
         goto out;
     }
 
     if (len == 0) {
-        printf("zero len\n");
+        printf("[hal_spi]: zero len\n");
         goto out;
     }
 
@@ -408,7 +408,7 @@ int drv_spi_write(drv_spi_inst_t inst, const void *tx_data, size_t len, bool cs_
         spi_config.qspi_dl_width = inst->data_line;
 
         if ((ret = ioctl(inst->dev_fd, RT_SPI_DEV_CTRL_CONFIG, &spi_config))) {
-            printf("spi config fail: %s (errno: %d, ret: %d)\n", strerror(errno), errno, ret);
+            printf("[hal_spi]: spi config fail: %s (errno: %d, ret: %d)\n", strerror(errno), errno, ret);
             pthread_spin_unlock(&lock[inst->spi_id]);
             goto out;
         }
@@ -442,7 +442,7 @@ int drv_spi_write(drv_spi_inst_t inst, const void *tx_data, size_t len, bool cs_
 
     ret = ioctl(inst->dev_fd, RT_SPI_DEV_CTRL_RW, &msg);
     if (ret != (int)len) {
-        printf("spi single write fail: %s (errno: %d, ret: %d)\n", strerror(errno), errno, ret);
+        printf("[hal_spi]: spi single write fail: %s (errno: %d, ret: %d)\n", strerror(errno), errno, ret);
     }
 
 out:
@@ -454,7 +454,7 @@ int drv_spi_transfer_message(drv_spi_inst_t inst, struct rt_qspi_message *msg)
     int ret;
 
     if (!inst || inst->dev_fd < 0) {
-        printf("pls drv_spi_inst_create first\n");
+        printf("[hal_spi]: pls drv_spi_inst_create first\n");
         ret = -1;
         goto out;
     }
@@ -473,7 +473,7 @@ int drv_spi_transfer_message(drv_spi_inst_t inst, struct rt_qspi_message *msg)
         spi_config.qspi_dl_width = inst->data_line;
 
         if ((ret = ioctl(inst->dev_fd, RT_SPI_DEV_CTRL_CONFIG, &spi_config))) {
-            printf("spi config fail: %s (errno: %d, ret: %d)\n", strerror(errno), errno, ret);
+            printf("[hal_spi]: spi config fail: %s (errno: %d, ret: %d)\n", strerror(errno), errno, ret);
             goto out;
         }
         g_handle_id[inst->spi_id] = inst->handle_id;
@@ -482,7 +482,7 @@ int drv_spi_transfer_message(drv_spi_inst_t inst, struct rt_qspi_message *msg)
     msg->qspi_data_lines = inst->data_line;
     ret = ioctl(inst->dev_fd, RT_SPI_DEV_CTRL_RW, msg);
     if (ret != (int)msg->parent.length) {
-        printf("spi transfer message fail: %s (errno: %d, ret: %d)\n", strerror(errno), errno, ret);
+        printf("[hal_spi]: spi transfer message fail: %s (errno: %d, ret: %d)\n", strerror(errno), errno, ret);
     }
 
 out:

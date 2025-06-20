@@ -79,7 +79,7 @@ static int drv_timer_open(int id)
     char dev_name[64];
 
     if (KD_TIMER_MAX_NUM <= id) {
-        printf("invalid timer id %d\n", id);
+        printf("[hal_hdtimer]: invalid timer id %d\n", id);
         return -1;
     }
 
@@ -91,7 +91,7 @@ static int drv_timer_open(int id)
 static int drv_timer_ioctl(drv_hard_timer_inst_t* inst, int cmd, void* arg)
 {
     if ((NULL == inst) || (0x00 > inst->fd)) {
-        printf("timer not open\n");
+        printf("[hal_hdtimer]: timer not open\n");
         return -1;
     }
 
@@ -103,17 +103,17 @@ int drv_hard_timer_inst_create(int id, drv_hard_timer_inst_t** inst)
     int fd = -1;
 
     if (KD_TIMER_MAX_NUM <= id) {
-        printf("invalid timer id %d\n", id);
+        printf("[hal_hdtimer]: invalid timer id %d\n", id);
         return -1;
     }
 
     if (0 > (fd = drv_timer_open(id))) {
-        printf("open /dev/hwtimer%d failed\n", id);
+        printf("[hal_hdtimer]: open /dev/hwtimer%d failed\n", id);
         return -2;
     }
 
     if (timer_in_use[id]) {
-        printf("timer%d maybe in use\n", id);
+        printf("[hal_hdtimer]: timer%d maybe in use\n", id);
     }
 
     if (*inst) {
@@ -123,7 +123,7 @@ int drv_hard_timer_inst_create(int id, drv_hard_timer_inst_t** inst)
 
     *inst = malloc(sizeof(drv_hard_timer_inst_t));
     if (NULL == *inst) {
-        printf("malloc failed");
+        printf("[hal_hdtimer]: malloc failed");
         return -1;
     }
     memset(*inst, 0x00, sizeof(drv_hard_timer_inst_t));
@@ -149,7 +149,7 @@ void drv_hard_timer_inst_destroy(drv_hard_timer_inst_t** inst)
     }
     
     if((void*)&timer_inst_type != (*inst)->base) {
-        printf("inst not hard timer\n");
+        printf("[hal_hdtimer]: inst not hard timer\n");
         return;
     }
 
@@ -174,7 +174,7 @@ int drv_hard_timer_get_info(drv_hard_timer_inst_t* inst, rt_hwtimer_info_t* info
     //     return -1;
     // }
     if (0x00 != drv_timer_ioctl(inst, HWTIMER_CTRL_INFO_GET, &inst->curr_timer_info)) {
-        printf("get hwtimer%d info failed\n", inst->id);
+        printf("[hal_hdtimer]: get hwtimer%d info failed\n", inst->id);
         return -1;
     }
 
@@ -194,12 +194,12 @@ int drv_hard_timer_set_mode(drv_hard_timer_inst_t* inst, rt_hwtimer_mode_t mode)
     }
 
     if (inst->started) {
-        printf("timer %d is started\n", inst->id);
+        printf("[hal_hdtimer]: timer %d is started\n", inst->id);
         return -1;
     }
 
     if (0x00 != drv_timer_ioctl(inst, HWTIMER_CTRL_MODE_SET, &_mode)) {
-        printf("set hwtimer%d mode failed.\n", inst->id);
+        printf("[hal_hdtimer]: set hwtimer%d mode failed.\n", inst->id);
         return -1;
     }
     inst->curr_mode = mode;
@@ -217,7 +217,7 @@ int drv_hard_timer_set_freq(drv_hard_timer_inst_t* inst, uint32_t freq)
     }
 
     if (inst->started) {
-        printf("timer %d is started\n", inst->id);
+        printf("[hal_hdtimer]: timer %d is started\n", inst->id);
         return -1;
     }
 
@@ -225,13 +225,13 @@ int drv_hard_timer_set_freq(drv_hard_timer_inst_t* inst, uint32_t freq)
     max_freq = inst->curr_timer_info.maxfreq;
 
     if ((_freq > max_freq) || (_freq < min_freq)) {
-        printf("invalid freq %d, should be %d ~  %d\n", _freq, min_freq, max_freq);
+        printf("[hal_hdtimer]: invalid freq %d, should be %d ~  %d\n", _freq, min_freq, max_freq);
         return -1;
     }
 
     if (inst->curr_freq_hz != _freq) {
         if ((0x00 != drv_timer_ioctl(inst, HWTIMER_CTRL_FREQ_SET, &_freq))) {
-            printf("set freq failed\n");
+            printf("[hal_hdtimer]: set freq failed\n");
             return -1;
         }
 
@@ -246,7 +246,7 @@ int drv_hard_timer_get_freq(drv_hard_timer_inst_t* inst, uint32_t* freq)
     uint32_t _freq;
 
     if (0x00 != drv_timer_ioctl(inst, HWTIMER_CTRL_FREQ_GET, &_freq)) {
-        printf("get timer current freq failed.\n");
+        printf("[hal_hdtimer]: get timer current freq failed.\n");
         return -1;
     }
     inst->curr_freq_hz = _freq;
@@ -272,7 +272,7 @@ int drv_hard_timer_set_period(drv_hard_timer_inst_t* inst, uint32_t period_ms)
     }
 
     if (inst->started) {
-        printf("timer %d is started\n", inst->id);
+        printf("[hal_hdtimer]: timer %d is started\n", inst->id);
         return -1;
     }
 
@@ -284,7 +284,7 @@ int drv_hard_timer_set_period(drv_hard_timer_inst_t* inst, uint32_t period_ms)
     maxPeriod_ms = (float)inst->curr_timer_info.maxcnt / freq_kHz; // Largest possible period in ms
 
     if ((period_ms > (uint32_t)maxPeriod_ms) || (period_ms < (uint32_t)minPeriod_ms)) {
-        printf("invalid period %d ms, should be %d ~ %d ms\n", period_ms,
+        printf("[hal_hdtimer]: invalid period %d ms, should be %d ~ %d ms\n", period_ms,
                (uint32_t)(minPeriod_ms), // Round up min period
                (uint32_t)(maxPeriod_ms)); // Round down max period
         return -1;
@@ -309,7 +309,7 @@ int drv_hard_timer_start(drv_hard_timer_inst_t* inst)
     tv.usec = (period_ms % 1000) * 1000;
 
     if (sizeof(tv) != write(inst->fd, &tv, sizeof(tv))) {
-        printf("start timer failed\n");
+        printf("[hal_hdtimer]: start timer failed\n");
         return -1;
     }
     inst->started = 1;
@@ -320,7 +320,7 @@ int drv_hard_timer_start(drv_hard_timer_inst_t* inst)
 int drv_hard_timer_stop(drv_hard_timer_inst_t* inst)
 {
     if (0x00 != drv_timer_ioctl(inst, HWTIMER_CTRL_STOP, NULL)) {
-        printf("stop timer failed.\n");
+        printf("[hal_hdtimer]: stop timer failed.\n");
         return -1;
     }
     inst->started = 0;
@@ -359,7 +359,7 @@ int drv_hard_timer_register_irq(drv_hard_timer_inst_t* inst, timer_irq_callback 
     }
 
     if (inst->started) {
-        printf("timer %d is started\n", inst->id);
+        printf("[hal_hdtimer]: timer %d is started\n", inst->id);
         return -1;
     }
 
@@ -367,7 +367,7 @@ int drv_hard_timer_register_irq(drv_hard_timer_inst_t* inst, timer_irq_callback 
     sa.sa_sigaction = drv_timer_sig_handler;
     sigemptyset(&sa.sa_mask);
     if ((-1) == sigaction(KD_TIMER_SIG, &sa, NULL)) {
-        printf("register sigaction failed.\n");
+        printf("[hal_hdtimer]: register sigaction failed.\n");
         return -1;
     }
 
@@ -379,7 +379,7 @@ int drv_hard_timer_register_irq(drv_hard_timer_inst_t* inst, timer_irq_callback 
     cfg.sigval = inst;
 
     if (0x00 != drv_timer_ioctl(inst, HWTIMER_CTRL_IRQ_SET, &cfg)) {
-        printf("set timer %d irq failed\n", inst->id);
+        printf("[hal_hdtimer]: set timer %d irq failed\n", inst->id);
 
         sa.sa_handler   = SIG_IGN;
         sa.sa_sigaction = NULL;
@@ -402,13 +402,13 @@ int drv_hard_timer_unregister_irq(drv_hard_timer_inst_t* inst)
         return -1;
     }
     if (inst->started) {
-        printf("timer %d is started\n", inst->id);
+        printf("[hal_hdtimer]: timer %d is started\n", inst->id);
         return -1;
     }
 
     cfg.enable = 0;
     if (0x00 != drv_timer_ioctl(inst, HWTIMER_CTRL_IRQ_SET, &cfg)) {
-        printf("disable timer %d irq failed\n", inst->id);
+        printf("[hal_hdtimer]: disable timer %d irq failed\n", inst->id);
         return -1;
     }
 

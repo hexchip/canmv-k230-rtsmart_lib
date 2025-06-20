@@ -55,7 +55,7 @@ static int open_ts_dev()
 
     ts_dev.fd = open("/dev/ts", O_RDWR);
     if (ts_dev.fd < 0) {
-        printf("open dev fail: %s (errno: %d)\n", strerror(errno), errno);
+        printf("[hal_tsensor]: open dev fail: %s (errno: %d)\n", strerror(errno), errno);
         goto out;
     }
 
@@ -77,7 +77,7 @@ int drv_tsensor_read_temperature(double *temp)
 
     ret = read(fd, temp, sizeof(*temp));
     if (ret != sizeof(*temp)) {
-        printf("read temperature fail: %s (errno: %d, ret: %d)\n", strerror(errno), errno, ret);
+        printf("[hal_tsensor]: read temperature fail: %s (errno: %d, ret: %d)\n", strerror(errno), errno, ret);
         ret = -1;
         goto err;
     }
@@ -105,14 +105,14 @@ int drv_tsensor_set_mode(uint8_t mode)
 
     if ((_mode != RT_DEVICE_TS_CTRL_MODE_SINGLE) &&
         (_mode != RT_DEVICE_TS_CTRL_MODE_CONTINUUOS)) {
-        printf("unsupport ts mode\n");
+        printf("[hal_tsensor]: unsupport ts mode\n");
         ret = -1;
         goto err;
     }
 
     ret = ioctl(fd, RT_DEVICE_TS_CTRL_SET_MODE, &_mode);
     if (ret) {
-        printf("ts set mode fail: %s (errno: %d, ret: %d)\n", strerror(errno), errno, ret);
+        printf("[hal_tsensor]: ts set mode fail: %s (errno: %d, ret: %d)\n", strerror(errno), errno, ret);
         ret = -1;
         goto err;
     }
@@ -139,13 +139,13 @@ int drv_tsensor_set_trim(uint8_t trim)
 
     if (_trim > RT_DEVICE_TS_CTRL_MAX_TRIM) {
         ret = -1;
-        printf("too large ts trim value\n");
+        printf("[hal_tsensor]: too large ts trim value\n");
         goto err;
     }
 
     ret = ioctl(fd, RT_DEVICE_TS_CTRL_SET_TRIM, &_trim);
     if (ret) {
-        printf("ts set trim fail: %s (errno: %d, ret: %d)\n", strerror(errno), errno, ret);
+        printf("[hal_tsensor]: ts set trim fail: %s (errno: %d, ret: %d)\n", strerror(errno), errno, ret);
         ret = -1;
         goto err;
     }
@@ -171,7 +171,7 @@ int drv_tsensor_get_mode(uint8_t *mode)
 
     ret = ioctl(fd, RT_DEVICE_TS_CTRL_GET_MODE, mode);
     if (ret) {
-        printf("ts get mode fail: %s (errno: %d, ret: %d)\n", strerror(errno), errno, ret);
+        printf("[hal_tsensor]: ts get mode fail: %s (errno: %d, ret: %d)\n", strerror(errno), errno, ret);
         ret = -1;
         goto err;
     }
@@ -196,7 +196,7 @@ int drv_tsensor_get_trim(uint8_t *trim)
 
     ret = ioctl(fd, RT_DEVICE_TS_CTRL_GET_TRIM, trim);
     if (ret) {
-        printf("ts get trim fail: %s (errno: %d, ret: %d)\n", strerror(errno), errno, ret);
+        printf("[hal_tsensor]: ts get trim fail: %s (errno: %d, ret: %d)\n", strerror(errno), errno, ret);
         ret = -1;
         goto err;
     }

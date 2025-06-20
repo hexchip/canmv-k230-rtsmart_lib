@@ -77,7 +77,7 @@ static void soft_timer_sig_handler(int sig, siginfo_t* si, void* uc)
 int drv_soft_timer_create(drv_soft_timer_inst_t** inst)
 {
     if (soft_timer_in_used) {
-        printf("soft timer in use\n");
+        printf("[hal_sfttimer]: soft timer in use\n");
         return -1;
     }
 
@@ -88,7 +88,7 @@ int drv_soft_timer_create(drv_soft_timer_inst_t** inst)
 
     *inst = malloc(sizeof(drv_soft_timer_inst_t));
     if (NULL == (*inst)) {
-        printf("malloc failed");
+        printf("[hal_sfttimer]: malloc failed");
         return -1;
     }
     memset(*inst, 0x00, sizeof(drv_soft_timer_inst_t));
@@ -111,7 +111,7 @@ int drv_soft_timer_create(drv_soft_timer_inst_t** inst)
     sev.sigev_signo           = SIGALRM;
     sev.sigev_value.sival_ptr = (*inst);
     if (timer_create(CLOCK_REALTIME, &sev, &(*inst)->timerid)) {
-        printf("create soft timer failed.\n");
+        printf("[hal_sfttimer]: create soft timer failed.\n");
         return -1;
     }
     soft_timer_in_used = 1;
@@ -128,7 +128,7 @@ void drv_soft_timer_destroy(drv_soft_timer_inst_t** inst)
     }
 
     if((void*)&soft_timer_type != (*inst)->base) {
-        printf("inst not soft timer\n");
+        printf("[hal_sfttimer]: inst not soft timer\n");
         return;
     }
 
@@ -155,7 +155,7 @@ void drv_soft_timer_destroy(drv_soft_timer_inst_t** inst)
 int drv_soft_timer_set_mode(drv_soft_timer_inst_t* inst, rt_hwtimer_mode_t mode)
 {
     if ((NULL == inst) || (inst->started)) {
-        printf("timer not created or started\n");
+        printf("[hal_sfttimer]: timer not created or started\n");
         return -1;
     }
 
@@ -167,7 +167,7 @@ int drv_soft_timer_set_mode(drv_soft_timer_inst_t* inst, rt_hwtimer_mode_t mode)
 int drv_soft_timer_set_period(drv_soft_timer_inst_t* inst, int period_ms)
 {
     if ((NULL == inst) || (inst->started)) {
-        printf("timer not created or started\n");
+        printf("[hal_sfttimer]: timer not created or started\n");
         return -1;
     }
 
@@ -182,7 +182,7 @@ int drv_soft_timer_start(drv_soft_timer_inst_t* inst)
     const uint64_t    ms_to_ns = 1000000ULL; // 1ms = 1,000,000ns
 
     if ((NULL == inst) || (inst->started)) {
-        printf("timer not created or started\n");
+        printf("[hal_sfttimer]: timer not created or started\n");
         return -1;
     }
     uint64_t ns = (uint64_t)inst->period_ms * ms_to_ns;
@@ -197,7 +197,7 @@ int drv_soft_timer_start(drv_soft_timer_inst_t* inst)
     }
 
     if (timer_settime(inst->timerid, 0, &its, NULL)) {
-        printf("start soft timer failed\n");
+        printf("[hal_sfttimer]: start soft timer failed\n");
         return -1;
     }
     inst->started = 1;
@@ -210,7 +210,7 @@ int drv_soft_timer_stop(drv_soft_timer_inst_t* inst)
     struct itimerspec its = {};
 
     if ((NULL == inst)) {
-        printf("timer not created or started\n");
+        printf("[hal_sfttimer]: timer not created or started\n");
         return -1;
     }
 
@@ -218,7 +218,7 @@ int drv_soft_timer_stop(drv_soft_timer_inst_t* inst)
         its.it_value.tv_sec  = 0;
         its.it_value.tv_nsec = 0;
         if (timer_settime(inst->timerid, 0, &its, NULL)) {
-            printf("stop soft timer failed\n");
+            printf("[hal_sfttimer]: stop soft timer failed\n");
             return -1;
         }
     }
@@ -230,7 +230,7 @@ int drv_soft_timer_stop(drv_soft_timer_inst_t* inst)
 int drv_soft_timer_register_irq(drv_soft_timer_inst_t* inst, timer_irq_callback callback, void* userargs)
 {
     if ((NULL == inst) || (inst->started)) {
-        printf("timer not created or started\n");
+        printf("[hal_sfttimer]: timer not created or started\n");
         return -1;
     }
 
@@ -243,7 +243,7 @@ int drv_soft_timer_register_irq(drv_soft_timer_inst_t* inst, timer_irq_callback 
 int drv_soft_timer_unregister_irq(drv_soft_timer_inst_t* inst)
 {
     if ((NULL == inst) || (inst->started)) {
-        printf("timer not created or started\n");
+        printf("[hal_sfttimer]: timer not created or started\n");
         return -1;
     }
 

@@ -56,7 +56,7 @@ int drv_adc_init()
 {
     if (0x00 > _drv_adc_fd) {
         if (0x00 > (_drv_adc_fd = open(DRV_ADC_DEV, O_RDWR))) {
-            printf("open adc device failed\n");
+            printf("[hal_adc]: open device failed\n");
             return -1;
         }
     }
@@ -90,12 +90,12 @@ uint32_t drv_adc_read(int channel)
     uint32_t value;
 
     if (0x00 > _drv_adc_fd) {
-        printf("drv adc not inited\n");
+        printf("[hal_adc]: not inited\n");
         return __UINT32_MAX__;
     }
 
     if (DRV_ADC_MAX_CHANNEL <= channel) {
-        printf("invalid adc channel %d\n", channel);
+        printf("[hal_adc]: invalid channel %d\n", channel);
         return __UINT32_MAX__;
     }
 
@@ -103,7 +103,7 @@ uint32_t drv_adc_read(int channel)
 
     if (0x00 == drv_adc_chn_state[channel]) {
         if (0x00 != ioctl(_drv_adc_fd, RT_ADC_CMD_ENABLE, channel)) {
-            printf("enable adc channel failed\n");
+            printf("[hal_adc]: enable channel failed\n");
 
             pthread_spin_unlock(&_drv_adc_lock);
             return __UINT32_MAX__;
@@ -113,7 +113,7 @@ uint32_t drv_adc_read(int channel)
 
     lseek(_drv_adc_fd, channel, SEEK_SET);
     if (0x00 == read(_drv_adc_fd, &value, sizeof(value))) {
-        printf("read adc channel failed\n");
+        printf("[hal_adc]: read channel failed\n");
 
         pthread_spin_unlock(&_drv_adc_lock);
         return __UINT32_MAX__;

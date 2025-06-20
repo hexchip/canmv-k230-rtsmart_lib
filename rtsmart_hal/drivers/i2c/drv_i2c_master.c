@@ -52,7 +52,7 @@ static int hard_i2c_in_use[KD_HARD_I2C_MAX_NUM];
 static int drv_i2c_ioctl(drv_i2c_inst_t* inst, int cmd, void* arg)
 {
     if ((NULL == inst) || (0x00 > inst->fd)) {
-        printf("i2c device not open\n");
+        printf("[hal_i2c]: i2c device not open\n");
         return -1;
     }
 
@@ -69,12 +69,12 @@ int drv_i2c_inst_create(int id, uint32_t freq, uint32_t timeout_ms, uint8_t scl,
 
     if (KD_HARD_I2C_MAX_NUM > id) {
         if (hard_i2c_in_use[id]) {
-            printf("i2c%d maybe in use\n", id);
+            printf("[hal_i2c]: i2c%d maybe in use\n", id);
         }
         dev_type = DRV_I2C_TYPE_HARD;
     } else {
         if ((64 <= soft_scl) || (64 <= soft_sda)) {
-            printf("invalid scl(%d), sda(%d) for soft i2c\n", soft_scl, soft_sda);
+            printf("[hal_i2c]: invalid scl(%d), sda(%d) for soft i2c\n", soft_scl, soft_sda);
             return -1;
         }
 
@@ -87,7 +87,7 @@ int drv_i2c_inst_create(int id, uint32_t freq, uint32_t timeout_ms, uint8_t scl,
         cfg.timeout_ms = timeout_ms;
 
         if (0x00 != canmv_misc_dev_ioctl(MISC_DEV_CMD_CREATE_SOFT_I2C, &cfg)) {
-            printf("can't create soft i2c device");
+            printf("[hal_i2c]: can't create soft i2c device");
 
             return -1;
         }
@@ -96,7 +96,7 @@ int drv_i2c_inst_create(int id, uint32_t freq, uint32_t timeout_ms, uint8_t scl,
     snprintf(dev_name, sizeof(dev_name), "/dev/i2c%d", id);
 
     if (0 > (fd = open(dev_name, O_RDWR))) {
-        printf("open %s failed\n", dev_name);
+        printf("[hal_i2c]: open %s failed\n", dev_name);
         return -1;
     }
 
@@ -107,7 +107,7 @@ int drv_i2c_inst_create(int id, uint32_t freq, uint32_t timeout_ms, uint8_t scl,
 
     *inst = malloc(sizeof(drv_i2c_inst_t));
     if (NULL == *inst) {
-        printf("malloc failed");
+        printf("[hal_i2c]: malloc failed");
 
         close(fd);
         return -1;
@@ -138,7 +138,7 @@ void drv_i2c_inst_destroy(drv_i2c_inst_t** inst)
     }
 
     if ((void*)&i2c_master_inst_type != (*inst)->base) {
-        printf("inst not i2c master\n");
+        printf("[hal_i2c]: inst not i2c master\n");
         return;
     }
 
@@ -155,7 +155,7 @@ void drv_i2c_inst_destroy(drv_i2c_inst_t** inst)
         uint32_t bus_num = id;
 
         if (0x00 != canmv_misc_dev_ioctl(MISC_DEV_CMD_DELETE_SOFT_I2C, &bus_num)) {
-            printf("can't delete soft i2c device");
+            printf("[hal_i2c]: can't delete soft i2c device");
         }
     } else {
         hard_i2c_in_use[id] = 0;
@@ -193,7 +193,7 @@ int drv_i2c_set_freq(drv_i2c_inst_t* inst, uint32_t freq)
     }
 
     if (0x00 != drv_i2c_ioctl(inst, RT_I2C_DEV_CTRL_CLK, &_freq)) {
-        printf("i2c set clock failed\n");
+        printf("[hal_i2c]: i2c set clock failed\n");
         return -1;
     }
 
@@ -215,7 +215,7 @@ int drv_i2c_set_timeout(drv_i2c_inst_t* inst, uint32_t timeout_ms)
     }
 
     if (0x00 != drv_i2c_ioctl(inst, RT_I2C_DEV_CTRL_TIMEOUT, &_timeout_ms)) {
-        printf("i2c set timeout failed\n");
+        printf("[hal_i2c]: i2c set timeout failed\n");
         return -1;
     }
 
@@ -274,7 +274,7 @@ int drv_i2c_transfer(drv_i2c_inst_t* inst, i2c_msg_t* msgs, int msg_cnt)
 // int drv_i2c_get_default_pin(int id, drv_i2c_pin_cfg_t* pins)
 // {
 //     if ((0 > id) || (KD_HARD_I2C_MAX_NUM <= id)) {
-//         printf("invalid i2c id\n");
+//         printf("[hal_i2c]: invalid i2c id\n");
 //         return -1;
 //     }
 
@@ -291,7 +291,7 @@ int drv_i2c_transfer(drv_i2c_inst_t* inst, i2c_msg_t* msgs, int msg_cnt)
 //     fpioa_func_t func_scl, func_sda;
 
 //     if ((0 > id) || (KD_HARD_I2C_MAX_NUM <= id) || (NULL == pins)) {
-//         printf("invalid i2c id\n");
+//         printf("[hal_i2c]: invalid i2c id\n");
 //         return -1;
 //     }
 
@@ -299,30 +299,30 @@ int drv_i2c_transfer(drv_i2c_inst_t* inst, i2c_msg_t* msgs, int msg_cnt)
 //     pin_sda = pins->pin_sda;
 
 //     if ((0x00 != drv_fpioa_get_pin_func(pin_scl, &func_scl)) || (0x00 != drv_fpioa_get_pin_func(pin_scl, &func_sda))) {
-//         printf("get pin func failed.\n");
+//         printf("[hal_i2c]: get pin func failed.\n");
 //         return -2;
 //     }
 
 //     if ((GPIO63 < func_scl) && (func_scl != (IIC0_SCL + id * 2))) {
-//         printf("pin %d can not set to scl\n", pin_scl);
+//         printf("[hal_i2c]: pin %d can not set to scl\n", pin_scl);
 //         return -3;
 //     }
 
 //     if ((GPIO63 < func_sda) && (func_sda != (IIC0_SDA + id * 2))) {
-//         printf("pin %d can not set to sda\n", pin_sda);
+//         printf("[hal_i2c]: pin %d can not set to sda\n", pin_sda);
 //         return -3;
 //     }
 
 //     if (GPIO63 < func_scl) {
 //         if (0x00 != drv_fpioa_set_pin_func(pin_scl, (IIC0_SCL + id * 2))) {
-//             printf("set pin %d to scl failed\n", pin_scl);
+//             printf("[hal_i2c]: set pin %d to scl failed\n", pin_scl);
 //             return -4;
 //         }
 //     }
 
 //     if (GPIO63 < func_sda) {
 //         if (0x00 != drv_fpioa_set_pin_func(pin_sda, (IIC0_SDA + id * 2))) {
-//             printf("set pin %d to sda failed\n", pin_sda);
+//             printf("[hal_i2c]: set pin %d to sda failed\n", pin_sda);
 //             return -4;
 //         }
 //     }

@@ -77,7 +77,7 @@ static int drv_gpio_open(void)
     if (0x00 > gpio_fd) {
         gpio_fd = open(DRV_GPIO_DEV, O_RDWR);
         if (0x00 > gpio_fd) {
-            printf("open gpio device failed.\n");
+            printf("[hal_gpio]: open gpio device failed.\n");
             return -1;
         }
     }
@@ -100,7 +100,7 @@ static void drv_gpio_close(void)
 static inline int drv_gpio_ioctl(int cmd, void* arg)
 {
     if (0x00 > gpio_fd) {
-        printf("gpio not open\n");
+        printf("[hal_gpio]: gpio not open\n");
         return -1;
     }
 
@@ -116,12 +116,12 @@ int drv_gpio_inst_create(int pin, drv_gpio_inst_t** inst)
     fpioa_func_t pin_curr_func;
 
     if (GPIO_MAX_NUM <= pin) {
-        printf("invalid pin %d\n", pin);
+        printf("[hal_gpio]: invalid pin %d\n", pin);
         return -1;
     }
 
     if((0x00 != drv_fpioa_get_pin_func(pin, &pin_curr_func)) || (pin_curr_func != (GPIO0 + pin))) {
-        printf("pin %d current fucntion not GPIO\n", pin);
+        printf("[hal_gpio]: pin %d current fucntion not GPIO\n", pin);
         return -1;
     }
 
@@ -136,7 +136,7 @@ int drv_gpio_inst_create(int pin, drv_gpio_inst_t** inst)
 
     *inst = malloc(sizeof(drv_gpio_inst_t));
     if (NULL == *inst) {
-        printf("malloc failed");
+        printf("[hal_gpio]: malloc failed");
         drv_gpio_close();
         return -1;
     }
@@ -159,7 +159,7 @@ void drv_gpio_inst_destroy(drv_gpio_inst_t** inst)
     }
 
     if((void*)&gpio_inst_type != (*inst)->base) {
-        printf("inst not gpio\n");
+        printf("[hal_gpio]: inst not gpio\n");
         return;
     }
 
@@ -196,7 +196,7 @@ gpio_pin_value_t drv_gpio_value_get(drv_gpio_inst_t* inst)
     gpio_cfg_t cfg = { .pin = inst->pin };
 
     if (0x00 != (ret = drv_gpio_ioctl(KD_GPIO_GET_VALUE, &cfg))) {
-        printf("read pin %d valued failed %d\n", cfg.pin, ret);
+        printf("[hal_gpio]: read pin %d valued failed %d\n", cfg.pin, ret);
         return GPIO_PV_LOW;
     }
     inst->curr_val = cfg.value;
@@ -220,7 +220,7 @@ int drv_gpio_mode_set(drv_gpio_inst_t* inst, gpio_drive_mode_t mode)
     inst->curr_mode = mode;
 
     if (0x00 != drv_fpioa_get_pin_cfg(inst->pin, &iomux.u.value)) {
-        printf("get pin iomux failed\n");
+        printf("[hal_gpio]: get pin iomux failed\n");
         return -1;
     }
     new_iomux.u.value = iomux.u.value;
@@ -238,14 +238,14 @@ int drv_gpio_mode_set(drv_gpio_inst_t* inst, gpio_drive_mode_t mode)
         break;
 
     default:
-        printf("invalid mode\n");
+        printf("[hal_gpio]: invalid mode\n");
         return -1;
         break;
     }
 
     if (new_iomux.u.value != iomux.u.value) {
         if (0x00 != drv_fpioa_set_pin_cfg(inst->pin, new_iomux.u.value)) {
-            printf("set pin iomux failed\n");
+            printf("[hal_gpio]: set pin iomux failed\n");
             return -1;
         }
     }
@@ -263,7 +263,7 @@ gpio_drive_mode_t drv_gpio_mode_get(drv_gpio_inst_t* inst)
     gpio_cfg_t cfg = { .pin = inst->pin };
 
     if (0x00 != (ret = drv_gpio_ioctl(KD_GPIO_GET_MODE, &cfg))) {
-        printf("read pin %d mode failed %d\n", cfg.pin, ret);
+        printf("[hal_gpio]: read pin %d mode failed %d\n", cfg.pin, ret);
         return GPIO_DM_MAX;
     }
     inst->curr_mode = cfg.value;
@@ -315,7 +315,7 @@ int drv_gpio_register_irq(drv_gpio_inst_t* inst, gpio_pin_edge_t mode, int debou
     gpio_irqcfg_t cfg = { .pin = inst->pin, .enable = 1, .mode = mode, .debounce = 10 };
 
     if (GPIO_IRQ_MAX_NUM <= inst->pin) {
-        printf("pin irq only support 0~63, not %d\n", inst->pin);
+        printf("[hal_gpio]: pin irq only support 0~63, not %d\n", inst->pin);
         return -1;
     }
 
@@ -338,14 +338,14 @@ int drv_gpio_register_irq(drv_gpio_inst_t* inst, gpio_pin_edge_t mode, int debou
     sa.sa_sigaction = drv_gpio_sig_handler;
     sigemptyset(&sa.sa_mask);
     if ((-1) == sigaction(KD_GPIO_SIG, &sa, NULL)) {
-        printf("register sigaction failed.\n");
+        printf("[hal_gpio]: register sigaction failed.\n");
         return -1;
     }
 
     cfg.signo  = KD_GPIO_SIG;
     cfg.sigval = inst;
     if (0x00 != (ret = drv_gpio_ioctl(KD_GPIO_SET_IRQ, &cfg))) {
-        printf("set pin %d irq failed %d\n", cfg.pin, ret);
+        printf("[hal_gpio]: set pin %d irq failed %d\n", cfg.pin, ret);
 
         sa.sa_handler   = SIG_IGN;
         sa.sa_sigaction = NULL;
@@ -374,7 +374,7 @@ int drv_gpio_unregister_irq(drv_gpio_inst_t* inst)
     }
 
     if (0x00 != (ret = drv_gpio_ioctl(KD_GPIO_SET_IRQ, &cfg))) {
-        printf("disable pin %d irq failed %d\n", cfg.pin, ret);
+        printf("[hal_gpio]: disable pin %d irq failed %d\n", cfg.pin, ret);
         return -1;
     }
 

@@ -51,7 +51,7 @@ static int wdt_ioctl(int cmd, void* arg)
     if (0 > _drv_wdt_fd) {
         if (0 > (_drv_wdt_fd = open(DRV_WDT_DEV, O_RDWR))) {
 
-            printf("open wdt device failed\n");
+            printf("[hal_wdt]: open wdt device failed\n");
             return -1;
         }
     }
@@ -64,7 +64,7 @@ int wdt_set_timeout(uint32_t timeout_sec)
     uint32_t _timeout_sec = timeout_sec;
 
     if (0x00 != wdt_ioctl(KD_DEVICE_CTRL_WDT_SET_TIMEOUT, &_timeout_sec)) {
-        printf("set wdt timeout failed\n");
+        printf("[hal_wdt]: set wdt timeout failed\n");
         return -1;
     }
 
@@ -76,7 +76,7 @@ uint32_t wdt_get_timeout(void)
     uint64_t timeout_sec;
 
     if (0x00 != wdt_ioctl(KD_DEVICE_CTRL_WDT_GET_TIMEOUT, &timeout_sec)) {
-        printf("get wdt timeout failed\n");
+        printf("[hal_wdt]: get wdt timeout failed\n");
         return -1;
     }
 
@@ -86,7 +86,7 @@ uint32_t wdt_get_timeout(void)
 int wdt_start()
 {
     if (0x00 != wdt_ioctl(KD_DEVICE_CTRL_WDT_START, NULL)) {
-        printf("start wdt failed\n");
+        printf("[hal_wdt]: start wdt failed\n");
         return -1;
     }
     return 0;
@@ -95,7 +95,7 @@ int wdt_start()
 int wdt_stop()
 {
     if (0x00 != wdt_ioctl(KD_DEVICE_CTRL_WDT_STOP, NULL)) {
-        printf("stop wdt failed\n");
+        printf("[hal_wdt]: stop wdt failed\n");
         return -1;
     }
     return 0;
@@ -104,7 +104,7 @@ int wdt_stop()
 int wdt_feed()
 {
     if (0x00 != wdt_ioctl(KD_DEVICE_CTRL_WDT_KEEPALIVE, NULL)) {
-        printf("feed wdt failed\n");
+        printf("[hal_wdt]: feed wdt failed\n");
         return -1;
     }
     return 0;

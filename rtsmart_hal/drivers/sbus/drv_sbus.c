@@ -101,13 +101,13 @@ sbus_dev_t sbus_create(const char *uart)
     struct uart_configure config;
 
     if (!is_valid_uart_path(uart)) {
-        printf("pls use /dev/uart1 ~ /dev/uart4\n");
+        printf("[hal_sbus]: pls use /dev/uart1 ~ /dev/uart4\n");
         goto err1;
     }
 
     dev = malloc(sizeof(struct sbus_device));
     if (!dev) {
-        printf("sbus_create fail\n");
+        printf("[hal_sbus]: sbus_create fail\n");
         goto err1;
     }
 
@@ -115,7 +115,7 @@ sbus_dev_t sbus_create(const char *uart)
 
     dev->fd = open(uart, O_RDWR);
     if (dev->fd < 0) {
-        printf("%s open failed!\n", uart);
+        printf("[hal_sbus]: %s open failed!\n", uart);
         goto err2;
     }
 
@@ -127,7 +127,7 @@ sbus_dev_t sbus_create(const char *uart)
     config.auto_flow = 0;
 
     if (ioctl(dev->fd, IOC_SET_BAUDRATE, &config)) {
-        printf("%s set baudrate failed!\n", uart);
+        printf("[hal_sbus]: %s set baudrate failed!\n", uart);
         goto err3;
     }
 
@@ -145,7 +145,7 @@ err1:
 void sbus_destroy(sbus_dev_t dev)
 {
     if (!dev) {
-        printf("%s: pls ensure sbus_create called\n", __func__);
+        printf("[hal_sbus]: %s: pls ensure sbus_create called\n", __func__);
         return;
     } else {
         close(dev->fd);
@@ -158,13 +158,13 @@ int sbus_set_channel(sbus_dev_t dev, uint8_t channel_index, uint16_t value)
     int ret = 0;
 
     if (!dev) {
-        printf("%s: pls ensure sbus_create called\n", __func__);
+        printf("[hal_sbus]: %s: pls ensure sbus_create called\n", __func__);
         ret = -1;
         goto out;
     }
 
     if (channel_index >= SBUS_CHANNEL_NUM) {
-        printf("channel index is over range\n");
+        printf("[hal_sbus]: channel index is over range\n");
         ret = -1;
         goto out;
     }
@@ -202,7 +202,7 @@ int sbus_set_all_channels(sbus_dev_t dev, uint16_t *channels)
 void sbus_set_flags(sbus_dev_t dev, const sbus_flag_t *flags)
 {
     if (!dev) {
-        printf("%s: pls ensure sbus_create called\n", __func__);
+        printf("[hal_sbus]: %s: pls ensure sbus_create called\n", __func__);
         return;
     }
 
@@ -214,7 +214,7 @@ void sbus_set_flags(sbus_dev_t dev, const sbus_flag_t *flags)
 void sbus_get_flags(sbus_dev_t dev, sbus_flag_t *flags_out)
 {
     if (!dev) {
-        printf("%s: pls ensure sbus_create called\n", __func__);
+        printf("[hal_sbus]: %s: pls ensure sbus_create called\n", __func__);
         return;
     }
 
@@ -259,7 +259,7 @@ void sbus_send_frame(sbus_dev_t dev)
     int len;
 
     if (!dev) {
-        printf("pls ensure sbus_create called \n");
+        printf("[hal_sbus]: pls ensure sbus_create called \n");
         return;
     }
 
@@ -301,22 +301,22 @@ void sbus_send_frame(sbus_dev_t dev)
 
         sbus_decode_frame(sbus_frame, ch, &flag);
         for (int i = 0; i < SBUS_CHANNEL_NUM; i++) {
-            printf("CH[%02d] = 0x%-3x(%4d)\n", i, ch[i], ch[i]);
+            printf("[hal_sbus]: CH[%02d] = 0x%-3x(%4d)\n", i, ch[i], ch[i]);
         }
-        printf("ch17 = %d, ch18 = %d, frame_lost = %d, failsafe = %d\n",
+        printf("[hal_sbus]: ch17 = %d, ch18 = %d, frame_lost = %d, failsafe = %d\n",
                flag.bit.ch17, flag.bit.ch18, flag.bit.frame_lost, flag.bit.failsafe);
     }
 
     len = write(dev->fd, sbus_frame, SBUS_FRAME_SIZE);
     if (len != SBUS_FRAME_SIZE) {
-        printf("%s short write , len = %d\n", __func__, len);
+        printf("[hal_sbus]: %s short write , len = %d\n", __func__, len);
     }
 }
 
 void sbus_set_debug(sbus_dev_t dev, bool val)
 {
     if (!dev) {
-        printf("%s: pls ensure sbus_create called\n", __func__);
+        printf("[hal_sbus]: %s: pls ensure sbus_create called\n", __func__);
         return;
     }
 
