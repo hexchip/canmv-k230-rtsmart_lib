@@ -100,11 +100,11 @@ struct rt_qspi_message {
  * @brief Create SPI HAL instance
  *
  * @param spi_id: SPI controller ID (0-2)
- * @param active_low: true mean cs active low
+ * @param active_low: true mean cs active low, once cs pin is -1, active_low takes no effect
  * @param mode: SPI mode (SPI_HAL_MODE_0 to SPI_HAL_MODE_3)
  * @param baudrate: Clock frequency in Hz
  * @param data_bits: Data bit width (4-32)
- * @param cs_pin: Chip select pin
+ * @param cs_pin: Chip select pin (0-63), -1 mean the control of cs pin is outside the HAL,it doesn't effect by cs_change
  * @param data_line: Number of data lines (1,2,4,8)
  *
  * @return 0 on success, negative on error, inst point to the spi instance

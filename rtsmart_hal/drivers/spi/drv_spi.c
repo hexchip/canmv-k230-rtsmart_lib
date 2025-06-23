@@ -116,8 +116,8 @@ int drv_spi_inst_create(int spi_id, bool active_low, int mode, uint32_t baudrate
         goto err_0;
     }
 
-    if (cs_pin < 0 || cs_pin > 63) {
-        printf("[hal_spi]: invalid soft cs (0x%x),range in [0x%x ~ 0x%x]\n",
+    if ((cs_pin < 0 || cs_pin > 63) && (cs_pin != -1)) {
+        printf("[hal_spi]: invalid soft cs (0x%x),range in [0x%x ~ 0x%x] OR -1\n",
                cs_pin, 0, 63);
         goto err_0;
     }
@@ -136,25 +136,27 @@ int drv_spi_inst_create(int spi_id, bool active_low, int mode, uint32_t baudrate
     memset(*inst, 0, sizeof(struct drv_spi_inst));
     (*inst)->spi_id = spi_id;
 
-    if (drv_fpioa_set_pin_func(cs_pin, GPIO0 + cs_pin) != 0) {
-        printf("[hal_spi]: fail to set cs pin func\n");
-        goto err_1;
-    }
+    if (cs_pin != -1) {
+        if (drv_fpioa_set_pin_func(cs_pin, GPIO0 + cs_pin) != 0) {
+            printf("[hal_spi]: fail to set cs pin func\n");
+            goto err_1;
+        }
 
-    if (drv_gpio_inst_create(cs_pin, &(*inst)->gpio_cs) != 0) {
-        printf("[hal_spi]: failed to create gpio instance for cs pin\n");
-        goto err_1;
-    }
-    if (drv_gpio_mode_set((*inst)->gpio_cs, GPIO_DM_OUTPUT) != 0) {
-        printf("[hal_spi]: failed to set cs pin mode\n");
-        goto err_2;
-    }
+        if (drv_gpio_inst_create(cs_pin, &(*inst)->gpio_cs) != 0) {
+            printf("[hal_spi]: failed to create gpio instance for cs pin\n");
+            goto err_1;
+        }
+        if (drv_gpio_mode_set((*inst)->gpio_cs, GPIO_DM_OUTPUT) != 0) {
+            printf("[hal_spi]: failed to set cs pin mode\n");
+            goto err_2;
+        }
 
-    if (!active_low) {
-        mode |= SPI_CS_ACTIVE_HIGH;
-        drv_gpio_value_set((*inst)->gpio_cs, GPIO_PV_LOW);
-    } else {
-        drv_gpio_value_set((*inst)->gpio_cs, GPIO_PV_HIGH);
+        if (!active_low) {
+            mode |= SPI_CS_ACTIVE_HIGH;
+            drv_gpio_value_set((*inst)->gpio_cs, GPIO_PV_LOW);
+        } else {
+            drv_gpio_value_set((*inst)->gpio_cs, GPIO_PV_HIGH);
+        }
     }
 
     (*inst)->mode = mode;
@@ -180,27 +182,23 @@ int drv_spi_inst_create(int spi_id, bool active_low, int mode, uint32_t baudrate
     spi_config.parent.data_width = data_bits;
 
     spi_config.parent.hard_cs = 0;
-    spi_config.parent.soft_cs = cs_pin | 0x80;
+    if (cs_pin != -1) {
+        spi_config.parent.soft_cs = cs_pin | 0x80;
+    } else {
+        spi_config.parent.soft_cs = 0;
+    }
 
     spi_config.parent.max_hz = baudrate;
     spi_config.qspi_dl_width = data_line;
     (*inst)->handle_id = idx++;
 
-    static int oneshot;
-
-    if (!oneshot)
-    {
-        int ret;
-
-        oneshot = true;
-        if ((ret = ioctl((*inst)->dev_fd, RT_SPI_DEV_CTRL_CONFIG, &spi_config))) {
-            printf("[hal_spi]: spi config fail: %s (errno: %d, ret: %d)\n", strerror(errno), errno, ret);
-            goto err_3;
-        }
-        pthread_spin_lock(&lock[spi_id]);
-        g_handle_id[spi_id] = (*inst)->handle_id;
-        pthread_spin_unlock(&lock[spi_id]);
+    if ((ret = ioctl((*inst)->dev_fd, RT_SPI_DEV_CTRL_CONFIG, &spi_config))) {
+        printf("[hal_spi]: spi config fail: %s (errno: %d, ret: %d)\n", strerror(errno), errno, ret);
+        goto err_3;
     }
+    pthread_spin_lock(&lock[spi_id]);
+    g_handle_id[spi_id] = (*inst)->handle_id;
+    pthread_spin_unlock(&lock[spi_id]);
 
     ret = 0;
     return ret;
@@ -208,7 +206,9 @@ int drv_spi_inst_create(int spi_id, bool active_low, int mode, uint32_t baudrate
 err_3:
     close((*inst)->dev_fd);
 err_2:
-    drv_gpio_inst_destroy(&(*inst)->gpio_cs);
+    if (cs_pin != -1) {
+        drv_gpio_inst_destroy(&(*inst)->gpio_cs);
+    }
 err_1:
     free(*inst);
 err_0:
@@ -238,6 +238,7 @@ int drv_spi_transfer(drv_spi_inst_t inst, const void *tx_data,
                         void *rx_data, size_t len, bool cs_change)
 {
     int ret = 0;
+    int cs_pin;
 
     struct rt_qspi_message msg;
 
@@ -253,6 +254,7 @@ int drv_spi_transfer(drv_spi_inst_t inst, const void *tx_data,
     }
 
     pthread_spin_lock(&lock[inst->spi_id]);
+    cs_pin = inst->cs_pin;
     if (g_handle_id[inst->spi_id] != inst->handle_id) {
         struct rt_qspi_configuration spi_config;
         memset(&spi_config, 0, sizeof(spi_config));
@@ -261,7 +263,11 @@ int drv_spi_transfer(drv_spi_inst_t inst, const void *tx_data,
         spi_config.parent.data_width = inst->data_bits;
 
         spi_config.parent.hard_cs = 0;
-        spi_config.parent.soft_cs = inst->cs_pin | 0x80;
+        if (cs_pin != -1) {
+            spi_config.parent.soft_cs = cs_pin | 0x80;
+        } else {
+            spi_config.parent.soft_cs = 0;
+        }
 
         spi_config.parent.max_hz = inst->baudrate;
         spi_config.qspi_dl_width = inst->data_line;
@@ -282,17 +288,22 @@ int drv_spi_transfer(drv_spi_inst_t inst, const void *tx_data,
     msg.parent.length = len;
     msg.parent.next = NULL;
 
-    if (inst->cs_status == CS_ACTIVE) {
-        msg.parent.cs_take = 0;
-    } else {
-        msg.parent.cs_take = 1;
-        inst->cs_status = CS_ACTIVE;
-    }
+    if (cs_pin != -1) {
+        if (inst->cs_status == CS_ACTIVE) {
+            msg.parent.cs_take = 0;
+        } else {
+            msg.parent.cs_take = 1;
+            inst->cs_status = CS_ACTIVE;
+        }
 
-    if (cs_change) {
-        msg.parent.cs_release = 1;
-        inst->cs_status = CS_INACTIVE;
+        if (cs_change) {
+            msg.parent.cs_release = 1;
+            inst->cs_status = CS_INACTIVE;
+        } else {
+            msg.parent.cs_release = 0;
+        }
     } else {
+        msg.parent.cs_take = 0;
         msg.parent.cs_release = 0;
     }
 
@@ -309,149 +320,18 @@ out:
 
 int drv_spi_read(drv_spi_inst_t inst, void *rx_data, size_t len, bool cs_change)
 {
-    int ret = 0;
-
-    if (!inst || inst->dev_fd < 0) {
-        printf("[hal_spi]: pls drv_spi_inst_create first\n");
-        ret = -1;
-        goto out;
-    }
-
-    if (len == 0) {
-        printf("[hal_spi]: zero len\n");
-        goto out;
-    }
-
-    pthread_spin_lock(&lock[inst->spi_id]);
-    if (g_handle_id[inst->spi_id] != inst->handle_id) {
-        struct rt_qspi_configuration spi_config;
-        memset(&spi_config, 0, sizeof(spi_config));
-
-        spi_config.parent.mode = inst->mode;
-        spi_config.parent.data_width = inst->data_bits;
-
-        spi_config.parent.hard_cs = 0;
-        spi_config.parent.soft_cs = inst->cs_pin | 0x80;
-
-        spi_config.parent.max_hz = inst->baudrate;
-        spi_config.qspi_dl_width = inst->data_line;
-
-        if ((ret = ioctl(inst->dev_fd, RT_SPI_DEV_CTRL_CONFIG, &spi_config))) {
-            printf("[hal_spi]: spi config fail: %s (errno: %d, ret: %d)\n", strerror(errno), errno, ret);
-            pthread_spin_unlock(&lock[inst->spi_id]);
-            goto out;
-        }
-        g_handle_id[inst->spi_id] = inst->handle_id;
-    }
-    pthread_spin_unlock(&lock[inst->spi_id]);
-
-    struct rt_qspi_message msg;
-    memset(&msg, 0, sizeof(msg));
-
-    msg.parent.send_buf = NULL;
-    msg.parent.recv_buf = rx_data;
-    msg.parent.length = len;
-    msg.parent.next = NULL;
-
-    if (inst->cs_status == CS_ACTIVE) {
-        msg.parent.cs_take = 0;
-    } else {
-        msg.parent.cs_take = 1;
-        inst->cs_status = CS_ACTIVE;
-    }
-
-    if (cs_change) {
-        msg.parent.cs_release = 1;
-        inst->cs_status = CS_INACTIVE;
-    } else {
-        msg.parent.cs_release = 0;
-    }
-
-    msg.qspi_data_lines = inst->data_line;
-
-    ret = ioctl(inst->dev_fd, RT_SPI_DEV_CTRL_RW, &msg);
-    if (ret != (int)len) {
-        printf("[hal_spi]: spi single read fail: %s (errno: %d, ret: %d)\n", strerror(errno), errno, ret);
-    }
-
-out:
-    return ret;
+    drv_spi_transfer(inst, NULL, rx_data, len, cs_change);
 }
 
 int drv_spi_write(drv_spi_inst_t inst, const void *tx_data, size_t len, bool cs_change)
 {
-    int ret = 0;
-
-    if (!inst || inst->dev_fd < 0) {
-        printf("[hal_spi]: pls drv_spi_inst_create first\n");
-        ret = -1;
-        goto out;
-    }
-
-    if (len == 0) {
-        printf("[hal_spi]: zero len\n");
-        goto out;
-    }
-
-    pthread_spin_lock(&lock[inst->spi_id]);
-    if (g_handle_id[inst->spi_id] != inst->handle_id) {
-        struct rt_qspi_configuration spi_config;
-        memset(&spi_config, 0, sizeof(spi_config));
-
-        spi_config.parent.mode = inst->mode;
-        spi_config.parent.data_width = inst->data_bits;
-
-        spi_config.parent.hard_cs = 0;
-        spi_config.parent.soft_cs = inst->cs_pin | 0x80;
-
-        spi_config.parent.max_hz = inst->baudrate;
-        spi_config.qspi_dl_width = inst->data_line;
-
-        if ((ret = ioctl(inst->dev_fd, RT_SPI_DEV_CTRL_CONFIG, &spi_config))) {
-            printf("[hal_spi]: spi config fail: %s (errno: %d, ret: %d)\n", strerror(errno), errno, ret);
-            pthread_spin_unlock(&lock[inst->spi_id]);
-            goto out;
-        }
-        g_handle_id[inst->spi_id] = inst->handle_id;
-    }
-    pthread_spin_unlock(&lock[inst->spi_id]);
-
-    struct rt_qspi_message msg;
-    memset(&msg, 0, sizeof(msg));
-
-    msg.parent.send_buf = tx_data;
-    msg.parent.recv_buf = NULL;
-    msg.parent.length = len;
-    msg.parent.next = NULL;
-
-    if (inst->cs_status == CS_ACTIVE) {
-        msg.parent.cs_take = 0;
-    } else {
-        msg.parent.cs_take = 1;
-        inst->cs_status = CS_ACTIVE;
-    }
-
-    if (cs_change) {
-        msg.parent.cs_release = 1;
-        inst->cs_status = CS_INACTIVE;
-    } else {
-        msg.parent.cs_release = 0;
-    }
-
-    msg.qspi_data_lines = inst->data_line;
-
-    ret = ioctl(inst->dev_fd, RT_SPI_DEV_CTRL_RW, &msg);
-    if (ret != (int)len) {
-        printf("[hal_spi]: spi single write fail: %s (errno: %d, ret: %d)\n", strerror(errno), errno, ret);
-    }
-
-out:
-    return ret;
+    drv_spi_transfer(inst, tx_data, NULL, len, cs_change);
 }
 
 int drv_spi_transfer_message(drv_spi_inst_t inst, struct rt_qspi_message *msg)
 {
     int ret;
+    int cs_pin;
 
     if (!inst || inst->dev_fd < 0) {
         printf("[hal_spi]: pls drv_spi_inst_create first\n");
@@ -459,6 +339,8 @@ int drv_spi_transfer_message(drv_spi_inst_t inst, struct rt_qspi_message *msg)
         goto out;
     }
 
+    pthread_spin_lock(&lock[inst->spi_id]);
+    cs_pin = inst->cs_pin;
     if (g_handle_id[inst->spi_id] != inst->handle_id) {
         struct rt_qspi_configuration spi_config;
         memset(&spi_config, 0, sizeof(spi_config));
@@ -467,17 +349,23 @@ int drv_spi_transfer_message(drv_spi_inst_t inst, struct rt_qspi_message *msg)
         spi_config.parent.data_width = inst->data_bits;
 
         spi_config.parent.hard_cs = 0;
-        spi_config.parent.soft_cs = inst->cs_pin | 0x80;
+        if (cs_pin != -1) {
+            spi_config.parent.soft_cs = cs_pin | 0x80;
+        } else {
+            spi_config.parent.soft_cs = 0;
+        }
 
         spi_config.parent.max_hz = inst->baudrate;
         spi_config.qspi_dl_width = inst->data_line;
 
         if ((ret = ioctl(inst->dev_fd, RT_SPI_DEV_CTRL_CONFIG, &spi_config))) {
             printf("[hal_spi]: spi config fail: %s (errno: %d, ret: %d)\n", strerror(errno), errno, ret);
+            pthread_spin_unlock(&lock[inst->spi_id]);
             goto out;
         }
         g_handle_id[inst->spi_id] = inst->handle_id;
     }
+    pthread_spin_unlock(&lock[inst->spi_id]);
 
     msg->qspi_data_lines = inst->data_line;
     ret = ioctl(inst->dev_fd, RT_SPI_DEV_CTRL_RW, msg);
