@@ -78,10 +78,21 @@ int drv_gpio_register_irq(drv_gpio_inst_t* inst, gpio_pin_edge_t mode, int debou
                           void* userargs);
 int drv_gpio_unregister_irq(drv_gpio_inst_t* inst);
 
-static inline int drv_gpio_get_pin_id(drv_gpio_inst_t* inst) { return inst->pin; }
+static inline int drv_gpio_get_pin_id(drv_gpio_inst_t* inst)
+{
+    if (!inst) {
+        return -1;
+    }
+
+    return inst->pin;
+}
 
 static inline int drv_gpio_toggle(drv_gpio_inst_t* inst)
 {
+    if (!inst) {
+        return -1;
+    }
+
     if ((-1) == inst->curr_val) {
         inst->curr_val = 0;
     }
