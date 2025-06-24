@@ -30,6 +30,7 @@
 #include <sys/mman.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <stdio.h>
 
 #include "drv_tsensor.h"
 
