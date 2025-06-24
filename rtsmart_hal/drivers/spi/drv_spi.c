@@ -28,6 +28,7 @@
 #include <sys/ioctl.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <pthread.h>
 
 #include "drv_spi.h"
@@ -320,12 +321,12 @@ out:
 
 int drv_spi_read(drv_spi_inst_t inst, void *rx_data, size_t len, bool cs_change)
 {
-    drv_spi_transfer(inst, NULL, rx_data, len, cs_change);
+    return drv_spi_transfer(inst, NULL, rx_data, len, cs_change);
 }
 
 int drv_spi_write(drv_spi_inst_t inst, const void *tx_data, size_t len, bool cs_change)
 {
-    drv_spi_transfer(inst, tx_data, NULL, len, cs_change);
+    return drv_spi_transfer(inst, tx_data, NULL, len, cs_change);
 }
 
 int drv_spi_transfer_message(drv_spi_inst_t inst, struct rt_qspi_message *msg)
