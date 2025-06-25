@@ -115,6 +115,10 @@ int drv_gpio_inst_create(int pin, drv_gpio_inst_t** inst)
 {
     fpioa_func_t pin_curr_func;
 
+    if (NULL == inst) {
+        return -1;
+    }
+
     if (GPIO_MAX_NUM <= pin) {
         printf("[hal_gpio]: invalid pin %d\n", pin);
         return -1;
@@ -154,6 +158,10 @@ int drv_gpio_inst_create(int pin, drv_gpio_inst_t** inst)
 
 void drv_gpio_inst_destroy(drv_gpio_inst_t** inst)
 {
+    if (NULL == inst) {
+        return;
+    }
+
     if (!*inst) {
         return;
     }
@@ -309,6 +317,12 @@ int drv_gpio_register_irq(drv_gpio_inst_t* inst, gpio_pin_edge_t mode, int debou
     struct sigaction sa;
 
     if (NULL == inst) {
+        return -1;
+    }
+
+    if (GPIO_PE_MAX <= mode) {
+        printf("[hal_gpio]: edge mode only support %d~%d, not %d\n",
+               GPIO_PE_RISING, GPIO_PE_LOW, mode);
         return -1;
     }
 
