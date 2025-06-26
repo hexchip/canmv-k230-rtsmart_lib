@@ -303,28 +303,6 @@ static int test_interrupt_operations(void)
     ret = drv_gpio_unregister_irq(gpio);
     TEST_ASSERT(ret == 0, "Unregister gpio irq");
 
-#if 0
-    for (int i = 0; i < sizeof(irq_modes)/sizeof(irq_modes[0]); i++) {
-        irq_count = 0;
-
-        // 注册中断
-        ret = drv_gpio_register_irq(gpio, irq_modes[i], 50, gpio_irq_handler, &irq_count);
-        TEST_ASSERT(ret == 0, mode_names[i]);
-
-        // 使能中断
-        ret = drv_gpio_enable_irq(gpio);
-        TEST_ASSERT(ret == 0, "Enable IRQ");
-
-        // 禁用中断
-        ret = drv_gpio_disable_irq(gpio);
-        TEST_ASSERT(ret == 0, "Disable IRQ");
-
-        // 注销中断
-        ret = drv_gpio_unregister_irq(gpio);
-        TEST_ASSERT(ret == 0, "Unregister IRQ");
-    }
-#endif
-
     // 测试防抖时间边界
     ret = drv_gpio_register_irq(gpio, GPIO_PE_RISING, 5, gpio_irq_handler, &irq_count);
     TEST_ASSERT(ret == 0, "Register with 5ms debounce (should be adjusted to 10ms)");
@@ -359,9 +337,7 @@ static int test_interrupt_operations(void)
     ret = drv_gpio_set_irq(NULL, 1);
     TEST_ASSERT(ret != 0, "Set IRQ with NULL instance should fail");
 
-    printf("111111111111111111111111\n");
     drv_gpio_inst_destroy(&gpio);
-    printf("222222222222222222222222\n");
 
     return 0;
 }
@@ -394,10 +370,9 @@ static int test_boundary_conditions(void)
     ret = drv_gpio_inst_create(TEST_GPIO_PIN_INVALID, &gpio);
     TEST_ASSERT(ret != 0, "Create GPIO with invalid pin should fail");
 
-#if 0
     // 测试引脚64的中断（超出中断支持范围）
     if (TEST_GPIO_PIN_MAX > 63) {
-        ret = drv_fpioa_set_pin_func(64, GPIO64);
+        ret = drv_fpioa_set_pin_func(64, TEST_PIN0);
         if (ret == 0) {
             ret = drv_gpio_inst_create(64, &gpio);
             if (ret == 0) {
@@ -407,7 +382,6 @@ static int test_boundary_conditions(void)
             }
         }
     }
-#endif
 
     return 0;
 }
