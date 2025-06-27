@@ -102,14 +102,13 @@ int drv_hard_timer_inst_create(int id, drv_hard_timer_inst_t** inst)
 {
     int fd = -1;
 
-    if (KD_TIMER_MAX_NUM <= id) {
-        printf("[hal_hdtimer]: invalid timer id %d\n", id);
+    if (NULL == inst) {
         return -1;
     }
 
-    if (0 > (fd = drv_timer_open(id))) {
-        printf("[hal_hdtimer]: open /dev/hwtimer%d failed\n", id);
-        return -2;
+    if (KD_TIMER_MAX_NUM <= id) {
+        printf("[hal_hdtimer]: invalid timer id %d\n", id);
+        return -1;
     }
 
     if (timer_in_use[id]) {
@@ -119,6 +118,11 @@ int drv_hard_timer_inst_create(int id, drv_hard_timer_inst_t** inst)
     if (*inst) {
         drv_hard_timer_inst_destroy(inst);
         *inst = NULL;
+    }
+
+    if (0 > (fd = drv_timer_open(id))) {
+        printf("[hal_hdtimer]: open /dev/hwtimer%d failed\n", id);
+        return -2;
     }
 
     *inst = malloc(sizeof(drv_hard_timer_inst_t));
@@ -147,8 +151,8 @@ void drv_hard_timer_inst_destroy(drv_hard_timer_inst_t** inst)
     if (NULL == (*inst)) {
         return;
     }
-    
-    if((void*)&timer_inst_type != (*inst)->base) {
+
+    if ((void*)&timer_inst_type != (*inst)->base) {
         printf("[hal_hdtimer]: inst not hard timer\n");
         return;
     }

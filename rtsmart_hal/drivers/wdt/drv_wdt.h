@@ -25,6 +25,10 @@
 
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -36,3 +40,7 @@ int wdt_start();
 int wdt_stop();
 
 int wdt_feed();
+
+#ifdef __cplusplus
+}
+#endif

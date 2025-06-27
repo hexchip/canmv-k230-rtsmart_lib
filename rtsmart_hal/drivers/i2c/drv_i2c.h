@@ -84,7 +84,9 @@ int drv_i2c_set_timeout(drv_i2c_inst_t* inst, uint32_t timeout_ms);
 
 int drv_i2c_transfer(drv_i2c_inst_t* inst, i2c_msg_t* msgs, int msg_cnt);
 
+#ifndef MEMBER_TYPE
 #define MEMBER_TYPE(struct_type, member) typeof(((struct_type*)0)->member)
+#endif
 
 #define DRV_I2C_GET_ATTR_TEMPLATE(struct_type, member, type)                                                           \
     static inline __attribute__((always_inline)) MEMBER_TYPE(struct_type, member)                                      \

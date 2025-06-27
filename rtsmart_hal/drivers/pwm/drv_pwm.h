@@ -24,6 +24,10 @@
  */
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdint.h>
 
 #define NSEC_PER_SEC 1000000000UL
@@ -39,3 +43,7 @@ int drv_pwm_disable(int channel);
 
 int drv_pwm_init(void);
 int drv_pwm_deinit(void);
+
+#ifdef __cplusplus
+}
+#endif

@@ -67,10 +67,22 @@ int drv_i2c_inst_create(int id, uint32_t freq, uint32_t timeout_ms, uint8_t scl,
 
     uint8_t soft_scl = scl, soft_sda = sda;
 
+    if (NULL == inst) {
+        return -1;
+    }
+
     if (KD_HARD_I2C_MAX_NUM > id) {
         if (hard_i2c_in_use[id]) {
             printf("[hal_i2c]: i2c%d maybe in use\n", id);
         }
+    }
+
+    if (*inst) {
+        drv_i2c_inst_destroy(inst);
+        *inst = NULL;
+    }
+
+    if (KD_HARD_I2C_MAX_NUM > id) {
         dev_type = DRV_I2C_TYPE_HARD;
     } else {
         if ((64 <= soft_scl) || (64 <= soft_sda)) {
@@ -98,11 +110,6 @@ int drv_i2c_inst_create(int id, uint32_t freq, uint32_t timeout_ms, uint8_t scl,
     if (0 > (fd = open(dev_name, O_RDWR))) {
         printf("[hal_i2c]: open %s failed\n", dev_name);
         return -1;
-    }
-
-    if (*inst) {
-        drv_i2c_inst_destroy(inst);
-        *inst = NULL;
     }
 
     *inst = malloc(sizeof(drv_i2c_inst_t));
@@ -149,7 +156,9 @@ void drv_i2c_inst_destroy(drv_i2c_inst_t** inst)
     free(*inst);
     *inst = NULL;
 
-    close(fd);
+    if (0 <= fd) {
+        close(fd);
+    }
 
     if (DRV_I2C_TYPE_SOFT == type) {
         uint32_t bus_num = id;
@@ -158,7 +167,9 @@ void drv_i2c_inst_destroy(drv_i2c_inst_t** inst)
             printf("[hal_i2c]: can't delete soft i2c device");
         }
     } else {
-        hard_i2c_in_use[id] = 0;
+        if (KD_HARD_I2C_MAX_NUM > id) {
+            hard_i2c_in_use[id] = 0;
+        }
     }
 }
 

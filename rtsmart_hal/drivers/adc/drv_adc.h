@@ -25,6 +25,10 @@
 
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -38,3 +42,7 @@ int drv_adc_deinit();
 
 uint32_t drv_adc_read(int channel);
 uint32_t drv_adc_read_uv(int channel, uint32_t ref_uv);
+
+#ifdef __cplusplus
+}
+#endif
