@@ -8,6 +8,8 @@
 #include "drv_sbus.h"
 
 #define KEY_PIN_NUM (21)
+#define UART3_TX (50)
+#define UART3_RX (51)
 
 #define TEST_ASSERT(cond, msg) do { \
     if (!(cond)) { \
@@ -35,13 +37,17 @@ int main(int argc, char *argv[])
     signal(SIGPIPE, SIG_IGN);
 
     ret = drv_fpioa_set_pin_func(KEY_PIN_NUM, GPIO0 + KEY_PIN_NUM);
-    TEST_ASSERT(ret == 0, "drv_fpioa_set_pin_func");
+    TEST_ASSERT(ret == 0, "drv_fpioa_set_pin_func GPIO");
     ret = drv_gpio_inst_create(KEY_PIN_NUM, &gpio_in);
     TEST_ASSERT(ret == 0, "drv_gpio_inst_create");
     ret = drv_gpio_mode_set(gpio_in, GPIO_DM_INPUT);
     TEST_ASSERT(ret == 0, "drv_gpio_mode_set");
+    ret = drv_fpioa_set_pin_func(UART3_RX, UART3_RXD);
+    TEST_ASSERT(ret == 0, "drv_fpioa_set_pin_func UART3_RXD");
+    ret = drv_fpioa_set_pin_func(UART3_TX, UART3_TXD);
+    TEST_ASSERT(ret == 0, "drv_fpioa_set_pin_func UART3_TXD");
 
-    dev = sbus_create("/dev/uart2");
+    dev = sbus_create(3);
     if (!dev) {
         ret = -1;
         goto out_1;

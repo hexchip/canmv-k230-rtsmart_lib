@@ -29,6 +29,7 @@
 #include <unistd.h>
 #include <sys/ioctl.h>
 
+#include "drv_uart.h"
 #include "drv_sbus.h"
 
 #define IOC_SET_BAUDRATE            _IOW('U', 0x40, int)
@@ -40,67 +41,20 @@
 #define SBUS_MAX 1811
 #define SBUS_NEUTRAL 1024
 
-struct uart_configure
-{
-    uint32_t baud_rate;
-
-    uint32_t data_bits               :4;
-    uint32_t stop_bits               :2;
-    uint32_t parity                  :2;
-    uint32_t fifo_lenth              :2;
-    uint32_t auto_flow               :1;
-    uint32_t reserved                :21;
-};
-
-typedef enum _uart_parity
-{
-    UART_PARITY_NONE,
-    UART_PARITY_ODD,
-    UART_PARITY_EVEN
-} uart_parity_t;
-
-typedef enum _uart_receive_trigger
-{
-    UART_RECEIVE_FIFO_1,
-    UART_RECEIVE_FIFO_8,
-    UART_RECEIVE_FIFO_16,
-    UART_RECEIVE_FIFO_30,
-} uart_receive_trigger_t;
-
 struct sbus_device
 {
     bool debug;
-    int fd;
+    drv_uart_inst_t *uart_inst;
     uint16_t channels[SBUS_CHANNEL_NUM];
     sbus_flag_t flags;
 };
 
-bool is_valid_uart_path(const char *path)
+sbus_dev_t sbus_create(int uart_id)
 {
-    const char *valid_paths[] =
-    {
-        "/dev/uart1",
-        "/dev/uart2",
-        "/dev/uart3",
-        "/dev/uart4",
-        NULL
-    };
-
-    for (int i = 0; valid_paths[i] != NULL; i++) {
-        if (strcmp(path, valid_paths[i]) == 0) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-sbus_dev_t sbus_create(const char *uart)
-{
+    int ret;
     sbus_dev_t dev;
-    struct uart_configure config;
 
-    if (!is_valid_uart_path(uart)) {
+    if (uart_id != 1 && uart_id != 2 && uart_id != 3 && uart_id != 4) {
         printf("[hal_sbus]: pls use /dev/uart1 ~ /dev/uart4\n");
         goto err1;
     }
@@ -113,33 +67,35 @@ sbus_dev_t sbus_create(const char *uart)
 
     memset(dev, 0, sizeof(struct sbus_device));
 
-    dev->fd = open(uart, O_RDWR);
-    if (dev->fd < 0) {
-        printf("[hal_sbus]: %s open failed!\n", uart);
+    ret = drv_uart_inst_create(uart_id, &dev->uart_inst);
+    if (ret != 0) {
+        printf("[hal_sbus]: uart%d creation failed: %d\n", uart_id, ret);
         goto err2;
     }
 
-    config.baud_rate = 100000;
-    config.data_bits = 8;
-    config.stop_bits = 2;
-    config.parity = UART_PARITY_EVEN;
-    config.fifo_lenth = UART_RECEIVE_FIFO_16;
-    config.auto_flow = 0;
+    struct uart_configure cfg = {
+        .baud_rate = 100000,
+        .data_bits = DATA_BITS_8,
+        .stop_bits = STOP_BITS_2,
+        .parity    = PARITY_EVEN,
+        .bit_order = BIT_ORDER_LSB,
+        .invert    = NRZ_NORMAL,
+        .bufsz     = 1 << 10
+    };
 
-    if (ioctl(dev->fd, IOC_SET_BAUDRATE, &config)) {
-        printf("[hal_sbus]: %s set baudrate failed!\n", uart);
+    ret = drv_uart_set_config(dev->uart_inst, &cfg);
+    if (ret != 0) {
+        printf("[hal_sbus]: uart configuration failed for %d baud: %d\n", cfg.baud_rate, ret);
         goto err3;
     }
 
     return dev;
-
 err3:
-    close(dev->fd);
+    drv_uart_inst_destroy(&dev->uart_inst);
 err2:
     free(dev);
 err1:
     return NULL;
-
 }
 
 void sbus_destroy(sbus_dev_t dev)
@@ -148,7 +104,7 @@ void sbus_destroy(sbus_dev_t dev)
         printf("[hal_sbus]: %s: pls ensure sbus_create called\n", __func__);
         return;
     } else {
-        close(dev->fd);
+        drv_uart_inst_destroy(&dev->uart_inst);
         free(dev);
     }
 }
@@ -252,7 +208,7 @@ static void sbus_decode_frame(uint8_t *sbus_frame, uint16_t *ch, sbus_flag_t *fl
     }
 }
 
-void sbus_send_frame(sbus_dev_t dev)
+int sbus_send_frame(sbus_dev_t dev)
 {
     uint8_t flags = 0;
     uint8_t sbus_frame[SBUS_FRAME_SIZE];
@@ -260,7 +216,7 @@ void sbus_send_frame(sbus_dev_t dev)
 
     if (!dev) {
         printf("[hal_sbus]: pls ensure sbus_create called \n");
-        return;
+        return -1;
     }
 
     sbus_frame[0] = 0x0F;
@@ -307,10 +263,13 @@ void sbus_send_frame(sbus_dev_t dev)
                flag.bit.ch17, flag.bit.ch18, flag.bit.frame_lost, flag.bit.failsafe);
     }
 
-    len = write(dev->fd, sbus_frame, SBUS_FRAME_SIZE);
+    len = drv_uart_write(dev->uart_inst, sbus_frame, SBUS_FRAME_SIZE);
     if (len != SBUS_FRAME_SIZE) {
         printf("[hal_sbus]: %s short write , len = %d\n", __func__, len);
+        return -1;
     }
+
+    return 0;
 }
 
 void sbus_set_debug(sbus_dev_t dev, bool val)
