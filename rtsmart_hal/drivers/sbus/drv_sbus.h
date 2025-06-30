@@ -46,13 +46,13 @@ typedef struct
 
 typedef struct sbus_device *sbus_dev_t;
 
-sbus_dev_t sbus_create(const char *uart);
+sbus_dev_t sbus_create(int uart_id);
 void sbus_destroy(sbus_dev_t dev);
 int sbus_set_all_channels(sbus_dev_t dev, uint16_t *channels);
 int sbus_set_channel(sbus_dev_t dev, uint8_t channel_index, uint16_t value);
 void sbus_set_flags(sbus_dev_t dev, const sbus_flag_t *flags);
 void sbus_get_flags(sbus_dev_t dev, sbus_flag_t *flags_out);
-void sbus_send_frame(sbus_dev_t dev);
+int sbus_send_frame(sbus_dev_t dev);
 void sbus_set_debug(sbus_dev_t dev, bool val);
 
 #ifdef __cplusplus

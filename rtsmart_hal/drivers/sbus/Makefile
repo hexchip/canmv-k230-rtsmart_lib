@@ -12,7 +12,7 @@ CDEPS	:= $(patsubst %, $(BUILD)/%, $(CFILES:.c=.o.d))
 CINCS  := $(wildcard *.h)
 
 CFLAGS := -std=gnu99 -fopenmp -march=rv64imafdcv -mabi=lp64d -mcmodel=medany
-CFLAGS += -I.
+CFLAGS += -I. -I../uart
 
 .PHONY: all clean distclean
 
