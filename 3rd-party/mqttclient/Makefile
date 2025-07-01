@@ -9,6 +9,7 @@ DIR = $(shell basename `pwd`)
 LOCAL_SRC_DIR = mqttclient
 LIB = $(RTSMART_3RD_PARTY_LIB_INSTALL_PATH)/lib$(DIR).a
 BUILD =  $(SDK_RTSMART_BUILD_DIR)/libs/3rd-party/mqttclient
+INC_STAMP := $(BUILD)/.inc_built
 
 MQTT_PLATFORM = linux
 
@@ -30,9 +31,8 @@ ifeq ($(CONFIG_MQTT_NETWORK_ENABLE_TYPE_TLS), y)
 	CFILES += $(wildcard $(LOCAL_SRC_DIR)/network/mbedtls/library/*.c)
 	CFILES += $(wildcard $(LOCAL_SRC_DIR)/network/mbedtls/wrapper/*.c)
 
-	CFLAGS += -I./include/mbedtls/wrapper
-	CFLAGS += -I./include/mbedtls/include
-	CFLAGS += -I./include/mbedtls/include/mbedtls
+	CFLAGS += -I$(RTSMART_3RD_PARTY_INC_INSTALL_PATH)
+	CFLAGS += -I$(RTSMART_3RD_PARTY_INC_INSTALL_PATH)/mqttclient/mbedtls/wrapper
 else
 	CFLAGS += -DMQTT_NETWORK_TYPE_NO_TLS
 endif
@@ -41,7 +41,7 @@ ifeq ($(CONFIG_MQTT_LOG_IS_SALOF), y)
 	CFILES += $(wildcard $(LOCAL_SRC_DIR)/common/log/*.c)
 	CFILES += $(wildcard $(LOCAL_SRC_DIR)/common/log/arch/$(MQTT_PLATFORM)/*.c)
 
-	CFLAGS += -I./include/log
+	CFLAGS += -I$(RTSMART_3RD_PARTY_INC_INSTALL_PATH)/mqttclient/log
 	CFLAGS += -DMQTT_LOG_IS_SALOF
 endif
 
@@ -75,39 +75,6 @@ CDEPS	      := $(patsubst %, $(BUILD)/%, $(CFILES:.c=.o.d))
 CXXDEPS		:= $(patsubst %, $(BUILD)/%, $(CXXFILES:.cpp=.o.d))
 DEPS	      := $(CDEPS) $(CXXDEPS)
 
-.PHONY: all
-all: check_path build_inc_dir $(LIB) build_example
-	@echo "Make lib$(DIR) done."
-
-
-.PHONY: build_inc_dir
-build_inc_dir:
-	@mkdir -p ./include/
-	@mkdir -p $(RTSMART_3RD_PARTY_INC_INSTALL_PATH)/mqttclient/
-
-	@cp -rp $(wildcard $(LOCAL_SRC_DIR)/common/*.h) ./include
-	@cp -rp $(wildcard $(LOCAL_SRC_DIR)/mqtt/*.h) ./include/
-	@cp -rp $(wildcard $(LOCAL_SRC_DIR)/mqttclient/*.h) ./include/
-	@cp -rp $(wildcard $(LOCAL_SRC_DIR)/network/*.h) ./include/
-	@cp -rp $(wildcard $(LOCAL_SRC_DIR)/platform/$(MQTT_PLATFORM)/*.h) ./include/
-	@cp -rp ./mqtt_config.h ./include/
-
-	echo $(CONFIG_MQTT_LOG_IS_SALOF)
-ifeq ($(CONFIG_MQTT_LOG_IS_SALOF), y)
-	@cp -rp $(wildcard $(LOCAL_SRC_DIR)/common/log/*.h) ./include/
-endif
-
-ifeq ($(CONFIG_MQTT_NETWORK_ENABLE_TYPE_TLS), y)
-	@mkdir -p ./include/mbedtls/wrapper
-	@cp -rp $(wildcard $(LOCAL_SRC_DIR)/network/mbedtls/wrapper/*.h) ./include/mbedtls/wrapper/
-	
-	@cp -rp $(LOCAL_SRC_DIR)/network/mbedtls/include/mbedtls/ ./include/mbedtls/include/
-endif
-
-	@cp -rp ./include/* $(RTSMART_3RD_PARTY_INC_INSTALL_PATH)/mqttclient/
-	@rm -r ./include/
-
-
 ELF_OUTPUT_DIR := $(RTSMART_LIBS_ELF_INSTALL_PATH)
 
 MQTT_EXAMPLE_CFLAGS := -march=rv64imafdcv -mabi=lp64d -mcmodel=medany
@@ -123,8 +90,34 @@ example_dirs :=
 example_dirs += ali baidu onenet
 # example_dirs += emqx
 
+.PHONY: all
+all: check_path $(LIB) build_example
+	@echo "Make lib$(DIR) done."
+
+.PHONY: build_inc_dir
+build_inc_dir:
+	@mkdir -p $(RTSMART_3RD_PARTY_INC_INSTALL_PATH)/mqttclient/
+
+	@cp -rp $(wildcard $(LOCAL_SRC_DIR)/common/*.h) $(RTSMART_3RD_PARTY_INC_INSTALL_PATH)/mqttclient/
+	@cp -rp $(wildcard $(LOCAL_SRC_DIR)/mqtt/*.h) $(RTSMART_3RD_PARTY_INC_INSTALL_PATH)/mqttclient/
+	@cp -rp $(wildcard $(LOCAL_SRC_DIR)/mqttclient/*.h) $(RTSMART_3RD_PARTY_INC_INSTALL_PATH)/mqttclient/
+	@cp -rp $(wildcard $(LOCAL_SRC_DIR)/network/*.h) $(RTSMART_3RD_PARTY_INC_INSTALL_PATH)/mqttclient/
+	@cp -rp $(wildcard $(LOCAL_SRC_DIR)/platform/$(MQTT_PLATFORM)/*.h) $(RTSMART_3RD_PARTY_INC_INSTALL_PATH)/mqttclient/
+	@cp -rp ./mqtt_config.h $(RTSMART_3RD_PARTY_INC_INSTALL_PATH)/mqttclient/
+
+ifeq ($(CONFIG_MQTT_LOG_IS_SALOF), y)
+	@cp -rp $(wildcard $(LOCAL_SRC_DIR)/common/log/*.h) $(RTSMART_3RD_PARTY_INC_INSTALL_PATH)/mqttclient/
+endif
+
+ifeq ($(CONFIG_MQTT_NETWORK_ENABLE_TYPE_TLS), y)
+	@mkdir -p $(RTSMART_3RD_PARTY_INC_INSTALL_PATH)/mqttclient/mbedtls/wrapper
+	@cp -rp $(wildcard $(LOCAL_SRC_DIR)/network/mbedtls/wrapper/*.h) $(RTSMART_3RD_PARTY_INC_INSTALL_PATH)/mqttclient/mbedtls/wrapper/
+
+	@cp -rp $(LOCAL_SRC_DIR)/network/mbedtls/include/mbedtls/ $(RTSMART_3RD_PARTY_INC_INSTALL_PATH)/mqttclient/mbedtls/include/
+endif
+
 .PHONY: build_example
-build_example: check_path build_inc_dir $(LIB)
+build_example: check_path $(LIB)
 ifeq ($(CONFIG_RTSMART_LIBS_MQTTCLIENT_ENABLE_TESTS), y)
 	@mkdir -p $(RTSMART_LIBS_ELF_INSTALL_PATH)
 	@$(foreach obj,$(example_dirs),\
@@ -133,23 +126,25 @@ ifeq ($(CONFIG_RTSMART_LIBS_MQTTCLIENT_ENABLE_TESTS), y)
 	$(STRIP) $(ELF_OUTPUT_DIR)/mqtt_example_$(obj);)
 endif
 
+$(INC_STAMP):
+	@$(MAKE) build_inc_dir
+	@touch $@
 
 $(LIB): $(OBJS) 
 	@echo [LD] $@
 	@$(AR) rcs $@ $^
 
-$(COBJS) : $(BUILD)/%.o : %.c
+$(COBJS) : $(BUILD)/%.o : %.c $(INC_STAMP)
 	@echo [CC] $<
 	@$(CC) $(CFLAGS) -MD -MP -MF $@.d -c $< -o $@
 
-$(CXXOBJS) : $(BUILD)/%.o : %.cpp
-	@echo [AS] $<
+$(CXXOBJS) : $(BUILD)/%.o : %.cpp $(INC_STAMP)
+	@echo [CXX] $<
 	@$(CXX) $(CXXFLAGS) -MD -MP -MF $@.d -c $< -o $@
-
 
 .PHONY: clean
 clean:
-	@rm -rf $(LIB) $(OBJS) $(DEPS)
+	@rm -rf $(LIB) $(OBJS) $(DEPS) $(INC_STAMP)
 
 .PHONY: check_path
 check_path:
