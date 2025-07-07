@@ -37,13 +37,13 @@
 #define DRV_GPIO_DEV ("/dev/gpio")
 
 /* ioctl */
-#define KD_GPIO_SET_MODE     _IOW('G', 20, int)
-#define KD_GPIO_GET_MODE     _IOWR('G', 21, int)
-#define KD_GPIO_SET_VALUE    _IOW('G', 22, int)
-#define KD_GPIO_GET_VALUE    _IOWR('G', 23, int)
-#define KD_GPIO_SET_IRQ      _IOW('G', 24, int)
-#define KD_GPIO_GET_IRQ      _IOWR('G', 25, int)
-#define KD_GPIO_SET_IRQ_STAT _IOW('G', 26, int)
+#define KD_GPIO_IOCTL_SET_MODE _IOW('G', 0, gpio_cfg_t*)
+#define KD_GPIO_IOCTL_GET_MODE _IOR('G', 1, gpio_cfg_t*)
+
+#define KD_GPIO_IOCTL_SET_IRQ _IOW('G', 2, gpio_irqcfg_t*)
+#define KD_GPIO_IOCTL_GET_IRQ _IOR('G', 3, gpio_irqcfg_t*)
+
+#define KD_GPIO_IOCTL_CTRL_IRQ _IOWR('G', 4, gpio_cfg_t*)
 
 #define KD_GPIO_SIG (SIGUSR1)
 
@@ -54,17 +54,11 @@ typedef struct {
 
 typedef struct {
     uint16_t pin;
+    uint16_t mode; // @ref gpio_pin_edge_t
 
-#define KD_GPIO_IRQ_DISABLE 0x00
-#define KD_GPIO_IRQ_ENABLE  0x01
-    uint8_t enable;
-
-    // @gpio_pin_edge_t
-    uint8_t  mode;
-    uint16_t debounce;
-
-    uint8_t signo;
-    void*   sigval;
+    uint16_t debounce_ms;
+    uint16_t signo;
+    void*    sigval; // reuse as callback
 } gpio_irqcfg_t;
 
 static int gpio_fd      = -1;
@@ -124,7 +118,7 @@ int drv_gpio_inst_create(int pin, drv_gpio_inst_t** inst)
         return -1;
     }
 
-    if((0x00 != drv_fpioa_get_pin_func(pin, &pin_curr_func)) || (pin_curr_func != (GPIO0 + pin))) {
+    if ((0x00 != drv_fpioa_get_pin_func(pin, &pin_curr_func)) || (pin_curr_func != (GPIO0 + pin))) {
         printf("[hal_gpio]: pin %d current fucntion not GPIO\n", pin);
         return -1;
     }
@@ -166,7 +160,7 @@ void drv_gpio_inst_destroy(drv_gpio_inst_t** inst)
         return;
     }
 
-    if((void*)&gpio_inst_type != (*inst)->base) {
+    if ((void*)&gpio_inst_type != (*inst)->base) {
         printf("[hal_gpio]: inst not gpio\n");
         return;
     }
@@ -180,36 +174,54 @@ void drv_gpio_inst_destroy(drv_gpio_inst_t** inst)
 
 int drv_gpio_value_set(drv_gpio_inst_t* inst, gpio_pin_value_t val)
 {
+    uint8_t value = val;
+
     if (NULL == inst) {
         return -1;
     }
 
-    gpio_cfg_t cfg = { .pin = inst->pin, val };
+    if (0x00 > gpio_fd) {
+        printf("[hal_gpio]: gpio not open\n");
+        return -1;
+    }
 
     if (inst->curr_val == val) {
         return 0;
     }
     inst->curr_val = val;
 
-    return drv_gpio_ioctl(KD_GPIO_SET_VALUE, &cfg);
+    lseek(gpio_fd, inst->pin, SEEK_SET);
+
+    if (0x01 != write(gpio_fd, &value, 1)) {
+        printf("[hal_gpio]: set pin%d failed\n", inst->pin);
+        return -1;
+    }
+
+    return 0;
 }
 
 gpio_pin_value_t drv_gpio_value_get(drv_gpio_inst_t* inst)
 {
+    uint8_t value = 0;
+
     if (NULL == inst) {
         return GPIO_PV_LOW;
     }
 
-    int        ret;
-    gpio_cfg_t cfg = { .pin = inst->pin };
-
-    if (0x00 != (ret = drv_gpio_ioctl(KD_GPIO_GET_VALUE, &cfg))) {
-        printf("[hal_gpio]: read pin %d valued failed %d\n", cfg.pin, ret);
-        return GPIO_PV_LOW;
+    if (0x00 > gpio_fd) {
+        printf("[hal_gpio]: gpio not open\n");
+        return -1;
     }
-    inst->curr_val = cfg.value;
 
-    return cfg.value;
+    lseek(gpio_fd, inst->pin, SEEK_SET);
+
+    if (0x01 != read(gpio_fd, &value, 1)) {
+        printf("[hal_gpio]: get pin%d failed\n", inst->pin);
+        return -1;
+    }
+    inst->curr_val = value;
+
+    return value;
 }
 
 int drv_gpio_mode_set(drv_gpio_inst_t* inst, gpio_drive_mode_t mode)
@@ -218,8 +230,6 @@ int drv_gpio_mode_set(drv_gpio_inst_t* inst, gpio_drive_mode_t mode)
         return -1;
     }
 
-    fpioa_iomux_cfg_t iomux, new_iomux;
-
     gpio_cfg_t cfg = { .pin = inst->pin, mode };
 
     if (mode == inst->curr_mode) {
@@ -227,38 +237,7 @@ int drv_gpio_mode_set(drv_gpio_inst_t* inst, gpio_drive_mode_t mode)
     }
     inst->curr_mode = mode;
 
-    if (0x00 != drv_fpioa_get_pin_cfg(inst->pin, &iomux.u.value)) {
-        printf("[hal_gpio]: get pin iomux failed\n");
-        return -1;
-    }
-    new_iomux.u.value = iomux.u.value;
-
-    switch (mode) {
-    case GPIO_DM_OUTPUT:
-        cfg.value = GPIO_DM_OUTPUT;
-
-        new_iomux.u.bit.oe = 1;
-        break;
-    case GPIO_DM_INPUT:
-        cfg.value = GPIO_DM_INPUT;
-
-        new_iomux.u.bit.ie = 1;
-        break;
-
-    default:
-        printf("[hal_gpio]: invalid mode\n");
-        return -1;
-        break;
-    }
-
-    if (new_iomux.u.value != iomux.u.value) {
-        if (0x00 != drv_fpioa_set_pin_cfg(inst->pin, new_iomux.u.value)) {
-            printf("[hal_gpio]: set pin iomux failed\n");
-            return -1;
-        }
-    }
-
-    return drv_gpio_ioctl(KD_GPIO_SET_MODE, &cfg);
+    return drv_gpio_ioctl(KD_GPIO_IOCTL_SET_MODE, &cfg);
 }
 
 gpio_drive_mode_t drv_gpio_mode_get(drv_gpio_inst_t* inst)
@@ -270,7 +249,7 @@ gpio_drive_mode_t drv_gpio_mode_get(drv_gpio_inst_t* inst)
     int        ret;
     gpio_cfg_t cfg = { .pin = inst->pin };
 
-    if (0x00 != (ret = drv_gpio_ioctl(KD_GPIO_GET_MODE, &cfg))) {
+    if (0x00 != (ret = drv_gpio_ioctl(KD_GPIO_IOCTL_GET_MODE, &cfg))) {
         printf("[hal_gpio]: read pin %d mode failed %d\n", cfg.pin, ret);
         return GPIO_DM_MAX;
     }
@@ -286,7 +265,9 @@ int drv_gpio_set_irq(drv_gpio_inst_t* inst, int enable)
     }
     gpio_cfg_t cfg = { .pin = inst->pin, enable };
 
-    return drv_gpio_ioctl(KD_GPIO_SET_IRQ_STAT, &cfg);
+    cfg.value &= ~(1 << 7); // just enable or disable irq, not auto detach irq
+
+    return drv_gpio_ioctl(KD_GPIO_IOCTL_CTRL_IRQ, &cfg);
 }
 
 static void drv_gpio_sig_handler(int sig, siginfo_t* si, void* uc)
@@ -310,8 +291,7 @@ static void drv_gpio_sig_handler(int sig, siginfo_t* si, void* uc)
     }
 }
 
-int drv_gpio_register_irq(drv_gpio_inst_t* inst, gpio_pin_edge_t mode, int debounce, gpio_irq_callback callback,
-                          void* userargs)
+int drv_gpio_register_irq(drv_gpio_inst_t* inst, gpio_pin_edge_t mode, int debounce, gpio_irq_callback callback, void* userargs)
 {
     int              ret;
     struct sigaction sa;
@@ -321,12 +301,11 @@ int drv_gpio_register_irq(drv_gpio_inst_t* inst, gpio_pin_edge_t mode, int debou
     }
 
     if (GPIO_PE_MAX <= mode) {
-        printf("[hal_gpio]: edge mode only support %d~%d, not %d\n",
-               GPIO_PE_RISING, GPIO_PE_LOW, mode);
+        printf("[hal_gpio]: edge mode only support %d~%d, not %d\n", GPIO_PE_RISING, GPIO_PE_LOW, mode);
         return -1;
     }
 
-    gpio_irqcfg_t cfg = { .pin = inst->pin, .enable = 1, .mode = mode, .debounce = 10 };
+    gpio_irqcfg_t cfg = { .pin = inst->pin, .mode = mode, .debounce_ms = 10 };
 
     if (GPIO_IRQ_MAX_NUM <= inst->pin) {
         printf("[hal_gpio]: pin irq only support 0~63, not %d\n", inst->pin);
@@ -336,7 +315,7 @@ int drv_gpio_register_irq(drv_gpio_inst_t* inst, gpio_pin_edge_t mode, int debou
     if (10 > debounce) {
         debounce = 10;
     }
-    cfg.debounce = debounce;
+    cfg.debounce_ms = debounce;
 
     if (GPIO_PE_MAX != inst->curr_irq_mode) {
         if (0x00 != drv_gpio_unregister_irq(inst)) {
@@ -358,7 +337,7 @@ int drv_gpio_register_irq(drv_gpio_inst_t* inst, gpio_pin_edge_t mode, int debou
 
     cfg.signo  = KD_GPIO_SIG;
     cfg.sigval = inst;
-    if (0x00 != (ret = drv_gpio_ioctl(KD_GPIO_SET_IRQ, &cfg))) {
+    if (0x00 != (ret = drv_gpio_ioctl(KD_GPIO_IOCTL_SET_IRQ, &cfg))) {
         printf("[hal_gpio]: set pin %d irq failed %d\n", cfg.pin, ret);
 
         sa.sa_handler   = SIG_IGN;
@@ -381,13 +360,15 @@ int drv_gpio_unregister_irq(drv_gpio_inst_t* inst)
 
     int              ret;
     struct sigaction sa;
-    gpio_irqcfg_t    cfg = { .pin = inst->pin, .enable = 0 };
+    gpio_cfg_t       cfg = { .pin = inst->pin, 0 };
+
+    cfg.value |= (1 << 7); // disable irq and detach irq.
 
     if ((GPIO_PE_MAX == inst->curr_irq_mode) && (NULL == inst->irq_callback)) {
         return 0;
     }
 
-    if (0x00 != (ret = drv_gpio_ioctl(KD_GPIO_SET_IRQ, &cfg))) {
+    if (0x00 != (ret = drv_gpio_ioctl(KD_GPIO_IOCTL_CTRL_IRQ, &cfg))) {
         printf("[hal_gpio]: disable pin %d irq failed %d\n", cfg.pin, ret);
         return -1;
     }

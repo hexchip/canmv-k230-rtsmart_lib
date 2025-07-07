@@ -16,26 +16,15 @@ CFLAGS += -I. -I../gpio -I../fpioa
 
 .PHONY: all clean distclean
 
-.PHONY: check_path
-check_path:
-	@if [ -z "$(RTSMART_HAL_LIB_INSTALL_PATH)" ]; then \
-		echo "Error: RTSMART_HAL_LIB_INSTALL_PATH is not set"; \
-		exit 1; \
-	fi
-	@if [ ! -d "$(RTSMART_HAL_LIB_INSTALL_PATH)" ]; then \
-		mkdir -p "$(RTSMART_HAL_LIB_INSTALL_PATH)"; \
-	fi
-	@if [ -z "$(RTSMART_HAL_INC_INSTALL_PATH)" ]; then \
-		echo "Error: RTSMART_HAL_INC_INSTALL_PATH is not set"; \
-		exit 1; \
-	fi
-	@if [ ! -d "$(RTSMART_HAL_INC_INSTALL_PATH)" ]; then \
-		mkdir -p "$(RTSMART_HAL_INC_INSTALL_PATH)"; \
-	fi
+HEADER_TARGETS := $(addprefix $(RTSMART_HAL_INC_INSTALL_PATH)/,$(CINCS))
 
-all: check_path $(LIB)
+# Rule to copy headers with directory creation dependency
+$(HEADER_TARGETS): $(RTSMART_HAL_INC_INSTALL_PATH)/%: %
+	@$(MKDIR) -p $(@D)
+	@$(CP) $< $@
+
+all: $(LIB) $(HEADER_TARGETS)
 	@$(ECHO) "Make lib$(DIR) done."
-	@$(CP) $(CINCS) $(RTSMART_HAL_INC_INSTALL_PATH)
 
 clean:
 	@$(RM) $(COBJS) $(CDEPS)
@@ -43,6 +32,7 @@ clean:
 distclean: clean
 
 $(LIB): $(COBJS)
+	@$(MKDIR) -p $(@D)
 	@$(ECHO) "AR $@"
 	@$(AR) rcs $@ $^
 

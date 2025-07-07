@@ -281,14 +281,14 @@ static int test_interrupt_operations(void)
            TEST_GPIO_PIN_IRQ, TEST_GPIO_PIN2);
     printf("Press Enter to continue...\n");
 
+    getchar();
+
     ret = drv_gpio_register_irq(gpio, irq_modes[1], 50, gpio_irq_handler, &irq_count);
     TEST_ASSERT(ret == 0, mode_names[1]);
 
     // 使能中断
     ret = drv_gpio_enable_irq(gpio);
     TEST_ASSERT(ret == 0, "Enable IRQ");
-
-    getchar();
 
     ret = drv_gpio_value_set(gpio_out, GPIO_PV_LOW);
     TEST_ASSERT(ret == 0, "Output LOW");

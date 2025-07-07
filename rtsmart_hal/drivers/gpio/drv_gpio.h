@@ -32,17 +32,20 @@ extern "C" {
 #endif
 
 typedef enum _gpio_pin_edge {
-    GPIO_PE_RISING = 0,
-    GPIO_PE_FALLING,
-    GPIO_PE_BOTH,
-    GPIO_PE_HIGH,
-    GPIO_PE_LOW,
+    GPIO_PE_RISING  = 0,
+    GPIO_PE_FALLING = 1,
+    GPIO_PE_BOTH    = 2,
+    GPIO_PE_HIGH    = 3,
+    GPIO_PE_LOW     = 4,
     GPIO_PE_MAX,
 } gpio_pin_edge_t;
 
 typedef enum _gpio_drive_mode {
-    GPIO_DM_OUTPUT = 0,
-    GPIO_DM_INPUT,
+    GPIO_DM_OUTPUT         = 0,
+    GPIO_DM_INPUT          = 1,
+    GPIO_DM_INPUT_PULLUP   = 2,
+    GPIO_DM_INPUT_PULLDOWN = 3,
+    GPIO_DM_OUTPUT_OD      = 4,
     GPIO_DM_MAX,
 } gpio_drive_mode_t;
 

@@ -217,6 +217,9 @@ NRSYS(timer_settime)
 NRSYS(timer_gettime)            /* 160 */
 NRSYS(timer_getoverrun)
 
+NRSYS(rt_hw_interrupt_disable)
+NRSYS(rt_hw_interrupt_enable)
+
     _NRSYS_SYSCALL_NR
 };
 #undef NRSYS
@@ -233,6 +236,16 @@ static inline __attribute__((always_inline)) rt_device_t rt_device_find(const ch
 static inline __attribute__((always_inline)) int rt_device_control(rt_device_t dev, int cmd, void* arg)
 {
     return (int)syscall(_NRSYS_rt_device_control, (long)dev, (long)cmd, (long)arg);
+}
+
+static inline __attribute__((always_inline)) uint32_t rt_hw_interrupt_disable(void)
+{
+    return (uint32_t)syscall(_NRSYS_rt_hw_interrupt_disable);
+}
+
+static inline __attribute__((always_inline)) void rt_hw_interrupt_enable(uint32_t level)
+{
+    syscall(_NRSYS_rt_hw_interrupt_enable, (long)level);
 }
 
 #ifdef __cplusplus

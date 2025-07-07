@@ -3,3 +3,8 @@ k230_bin
 *.o
 *.o.d
 test_*.elf
+
+# subproject
+3rd-party/freetype/freetype/
+3rd-party/mbedtls/mbedtls/
+3rd-party/mqttclient/mqttclient/

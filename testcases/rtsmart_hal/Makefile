@@ -29,7 +29,7 @@ LDFLAGS += $(LIB_LDFLAGS)
 # Phony targets
 .PHONY: all clean distclean check_path
 
-all: check_path $(PROGRAMS)
+all: $(PROGRAMS)
 	@echo "[SUCCESS] Built all RTSmart HAL testcases"
 
 clean:
@@ -51,22 +51,12 @@ $(BUILD)/%.o: %.c | $(OBJ_DIRS)
 
 # Linking rule - separated from compilation
 $(BUILD)/%.elf: $(BUILD)/%.o
+	@$(MKDIR) -p $(@D)
 	@echo "[LD] $< -> $@"
 	@$(CC) $(CFLAGS) $< $(LDFLAGS) -o $@
 	@$(STRIP) $@
-	@cp $@ $(RTSMART_LIBS_ELF_INSTALL_PATH)
+	@mv $@ $(RTSMART_LIBS_ELF_INSTALL_PATH)
 	@echo "[INSTALLED] $@ to $(RTSMART_LIBS_ELF_INSTALL_PATH)"
-
-# Path verification
-check_path:
-	@if [ -z "$(RTSMART_LIBS_ELF_INSTALL_PATH)" ]; then \
-		echo "Error: RTSMART_LIBS_ELF_INSTALL_PATH is not set"; \
-		exit 1; \
-	fi
-	@if [ ! -d "$(RTSMART_LIBS_ELF_INSTALL_PATH)" ]; then \
-		echo "Creating install directory: $(RTSMART_LIBS_ELF_INSTALL_PATH)"; \
-		mkdir -p "$(RTSMART_LIBS_ELF_INSTALL_PATH)"; \
-	fi
 
 # Include dependencies
 -include $(PROGRAMDEPS)
