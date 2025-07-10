@@ -356,6 +356,12 @@ int drv_fpioa_set_pin_func(int pin, fpioa_func_t func)
         }
     }
 
+    /* if set pin to GPIO, we not check too strictly */
+    if((GPIO63 >= func) && (GPIO0 <= func)) {
+        found    = 1;
+        func_sel = 0;
+    }
+
     if (0x00 == found) {
         printf("[hal_fpioa]: pin %d unsupport func %d\n", pin, func);
         return -1;

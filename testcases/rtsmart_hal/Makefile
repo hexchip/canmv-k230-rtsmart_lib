@@ -50,13 +50,16 @@ $(BUILD)/%.o: %.c | $(OBJ_DIRS)
 	@$(CC) $(CFLAGS) -MD -MP -MF $(@:.o=.d) -c $< -o $@
 
 # Linking rule - separated from compilation
-$(BUILD)/%.elf: $(BUILD)/%.o
+$(BUILD)/%.elf: $(BUILD)/%.o | $(RTSMART_LIBS_ELF_INSTALL_PATH)
 	@$(MKDIR) -p $(@D)
 	@echo "[LD] $< -> $@"
 	@$(CC) $(CFLAGS) $< $(LDFLAGS) -o $@
 	@$(STRIP) $@
 	@mv $@ $(RTSMART_LIBS_ELF_INSTALL_PATH)
 	@echo "[INSTALLED] $@ to $(RTSMART_LIBS_ELF_INSTALL_PATH)"
+
+$(RTSMART_LIBS_ELF_INSTALL_PATH):
+	@$(MKDIR) -p $@
 
 # Include dependencies
 -include $(PROGRAMDEPS)
