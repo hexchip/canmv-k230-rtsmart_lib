@@ -220,6 +220,8 @@ NRSYS(timer_getoverrun)
 NRSYS(rt_hw_interrupt_disable)
 NRSYS(rt_hw_interrupt_enable)
 
+NRSYS(statfs)
+
     _NRSYS_SYSCALL_NR
 };
 #undef NRSYS
