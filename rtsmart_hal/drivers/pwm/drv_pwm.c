@@ -136,8 +136,10 @@ int drv_pwm_get_freq(int channel, uint32_t* freq)
     }
 
     if (0x00 == period) {
-        printf("[hal_pwm]: period is 0, frequency undefined\n");
-        return -1;
+        if (freq) {
+            *freq = 0; // Undefined frequency
+        }
+        return 0;
     }
 
     if (freq) {
@@ -181,11 +183,15 @@ int drv_pwm_get_duty(int channel, uint32_t* duty)
     }
 
     if (period == 0) {
-        printf("[hal_pwm]: period is 0, duty cycle undefined\n");
-        return -1;
+        if(duty) {
+            *duty = 0;
+        }
+        return 0;
     }
 
-    *duty = (pulse * 100) / period;
+    if(duty) {
+        *duty = (pulse * 100) / period;
+    }
 
     return 0;
 }
