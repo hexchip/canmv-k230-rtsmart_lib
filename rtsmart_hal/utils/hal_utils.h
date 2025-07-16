@@ -37,7 +37,7 @@ extern "C" {
 static __inline __attribute__((__always_inline__)) uint64_t utils_cpu_ticks(void)
 {
     uint64_t tick;
-    __asm__ __volatile__("rdcycle %0" : "=r"(tick));
+    __asm__ __volatile__("rdtime %0" : "=r"(tick));
     return tick;
 }
 
@@ -61,6 +61,21 @@ static __inline __attribute__((__always_inline__)) uint64_t utils_cpu_ticks_ns(v
     __asm__ __volatile__("rdtime %0" : "=r"(time));
     return (time * 1000000000ULL) / CPU_TICKS_PER_SECOND;
 }
+
+/** memory map **************************************************************/
+struct utils_memory_map {
+    int   fd; /**< file descriptor */
+    void* base; /**< base address of mapped memory */
+};
+
+volatile uint32_t* utils_map_memory(struct utils_memory_map* map, uint32_t target);
+
+void utils_unmap_memory(struct utils_memory_map* map);
+
+int utils_reboot(void);
+int utils_reboot_to_bootloader(void);
+
+int utils_read_chipid(uint8_t chip_id[32]);
 
 #ifdef __cplusplus
 }
