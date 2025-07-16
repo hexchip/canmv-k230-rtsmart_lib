@@ -1,0 +1,175 @@
+/* Copyright (c) 2025, Canaan Bright Sight Co., Ltd
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 1. Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+ * CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+ * INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+#include <stdio.h>
+#include <string.h>
+
+
+#include "canmv_misc.h"
+
+int canmv_misc_get_sys_heap_size(struct canmv_misc_dev_meminfo_t* meminfo)
+{
+    if (0x00 != canmv_misc_dev_ioctl(MISC_DEV_CMD_READ_HEAP, meminfo)) {
+        return -1;
+    }
+
+    return 0;
+}
+
+int canmv_misc_get_sys_page_info(struct canmv_misc_dev_meminfo_t* meminfo)
+{
+    if (0x00 != canmv_misc_dev_ioctl(MISC_DEV_CMD_READ_PAGE, meminfo)) {
+        return -1;
+    }
+
+    return 0;
+}
+
+int canmv_misc_get_sys_mmz_info(struct canmv_misc_dev_meminfo_t* meminfo)
+{
+    char buffer[231]; // dirty work, read data size 230 will recv the data we wanted.
+
+    int total, used, free;
+    memset(buffer, 0, sizeof(buffer));
+
+    int fd = open("/proc/media-mem", O_RDONLY);
+    if (0 > fd) {
+        return -1;
+    }
+    read(fd, buffer, 230);
+    close(fd);
+    buffer[230] = 0;
+
+    sscanf(buffer, "total:%d,used:%d,remain=%d", &total, &used, &free);
+
+    meminfo->total_size = total;
+    meminfo->used_size  = used;
+    meminfo->free_size  = free;
+
+    return 0;
+}
+
+int canmv_misc_get_sys_memory_size(uint64_t* size)
+{
+    if (0x00 != canmv_misc_dev_ioctl(MISC_DEV_CMD_GET_MEMORY_SIZE, size)) {
+        return -1;
+    }
+
+    return 0;
+}
+
+int canmv_misc_get_cpu_usage(int* usage)
+{
+    if (0x00 != canmv_misc_dev_ioctl(MISC_DEV_CMD_CPU_USAGE, usage)) {
+        return -1;
+    }
+
+    return 0;
+}
+
+int canmv_misc_create_soft_i2c_device(struct soft_i2c_configure* config)
+{
+    if (0x00 != canmv_misc_dev_ioctl(MISC_DEV_CMD_CREATE_SOFT_I2C, config)) {
+        return -1;
+    }
+
+    return 0;
+}
+
+int canmv_misc_delete_soft_i2c_device(uint32_t bus_num)
+{
+    if (0x00 != canmv_misc_dev_ioctl(MISC_DEV_CMD_DELETE_SOFT_I2C, &bus_num)) {
+        return -1;
+    }
+
+    return 0;
+}
+
+int canmv_misc_ntp_sync(void)
+{
+    if (0x00 != canmv_misc_dev_ioctl(MISC_DEV_CMD_NTP_SYNC, NULL)) {
+        return -1;
+    }
+
+    return 0;
+}
+
+int canmv_misc_get_utc_timestamp(time_t* tm)
+{
+    if (0x00 != canmv_misc_dev_ioctl(MISC_DEV_CMD_GET_UTC_TIMESTAMP, tm)) {
+        return -1;
+    }
+
+    return 0;
+}
+
+int canmv_misc_set_utc_timestamp(time_t tm)
+{
+    if (0x00 != canmv_misc_dev_ioctl(MISC_DEV_CMD_SET_UTC_TIMESTAMP, &tm)) {
+        return -1;
+    }
+
+    return 0;
+}
+
+int canmv_misc_get_local_time(struct tm* local_time)
+{
+    if (0x00 != canmv_misc_dev_ioctl(MISC_DEV_CMD_GET_LOCAL_TIME, local_time)) {
+        return -1;
+    }
+
+    return 0;
+}
+
+int canmv_misc_set_timezone(int32_t offset)
+{
+    if (0x00 != canmv_misc_dev_ioctl(MISC_DEV_CMD_SET_TIMEZONE, &offset)) {
+        return -1;
+    }
+
+    return 0;
+}
+
+int canmv_misc_get_timezone(int32_t* offset)
+{
+    if (0x00 != canmv_misc_dev_ioctl(MISC_DEV_CMD_GET_TIMEZONE, offset)) {
+        return -1;
+    }
+
+    return 0;
+}
+
+int canmv_misc_set_auto_exec_py_stage(int stage)
+{
+    if (stage < STAGE_NORMAL || stage >= STAGE_MAX) {
+        return -1; // Invalid stage
+    }
+
+    if (0x00 != canmv_misc_dev_ioctl(MISC_DEV_CMD_SET_AUTO_EXEC_PY_STAGE, &stage)) {
+        return -1;
+    }
+
+    return 0;
+}

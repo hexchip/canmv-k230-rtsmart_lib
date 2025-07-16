@@ -35,23 +35,19 @@
 #include <time.h>
 #include <unistd.h>
 
-#define MISC_DEV_CMD_READ_HEAP                _IOWR('M', 0x00, void *)
-#define MISC_DEV_CMD_READ_PAGE                _IOWR('M', 0x01, void *)
-#define MISC_DEV_CMD_GET_MEMORY_SIZE          _IOWR('M', 0x02, void *)
-#define MISC_DEV_CMD_CPU_USAGE                _IOWR('M', 0x03, void *)
-#define MISC_DEV_CMD_CREATE_SOFT_I2C          _IOWR('M', 0x04, void *)
-#define MISC_DEV_CMD_DELETE_SOFT_I2C          _IOWR('M', 0x05, void *)
-#define MISC_DEV_CMD_GET_FS_STAT              _IOWR('M', 0x06, void *)
-#define MISC_DEV_CMD_NTP_SYNC                 _IOWR('M', 0x07, void *)
-#define MISC_DEV_CMD_GET_UTC_TIMESTAMP        _IOWR('M', 0x08, void *)
-#define MISC_DEV_CMD_SET_UTC_TIMESTAMP        _IOWR('M', 0x09, void *)
-#define MISC_DEV_CMD_GET_LOCAL_TIME           _IOWR('M', 0x0a, void *)
-#define MISC_DEV_CMD_SET_TIMEZONE             _IOWR('M', 0x0b, void *)
-#define MISC_DEV_CMD_GET_TIMEZONE             _IOWR('M', 0x0c, void *)
-#define MISC_DEV_CMD_SET_AUTO_EXEC_PY_STAGE   _IOWR('M', 0x0d, void *)
-
-// MISC_DEV_CMD_GET_FS_STAT
-#define FS_STAT_PATH_LENGTH 32
+#define MISC_DEV_CMD_READ_HEAP              _IOWR('M', 0x00, void*)
+#define MISC_DEV_CMD_READ_PAGE              _IOWR('M', 0x01, void*)
+#define MISC_DEV_CMD_GET_MEMORY_SIZE        _IOWR('M', 0x02, void*)
+#define MISC_DEV_CMD_CPU_USAGE              _IOWR('M', 0x03, void*)
+#define MISC_DEV_CMD_CREATE_SOFT_I2C        _IOWR('M', 0x04, void*)
+#define MISC_DEV_CMD_DELETE_SOFT_I2C        _IOWR('M', 0x05, void*)
+#define MISC_DEV_CMD_NTP_SYNC               _IOWR('M', 0x07, void*)
+#define MISC_DEV_CMD_GET_UTC_TIMESTAMP      _IOWR('M', 0x08, void*)
+#define MISC_DEV_CMD_SET_UTC_TIMESTAMP      _IOWR('M', 0x09, void*)
+#define MISC_DEV_CMD_GET_LOCAL_TIME         _IOWR('M', 0x0a, void*)
+#define MISC_DEV_CMD_SET_TIMEZONE           _IOWR('M', 0x0b, void*)
+#define MISC_DEV_CMD_GET_TIMEZONE           _IOWR('M', 0x0c, void*)
+#define MISC_DEV_CMD_SET_AUTO_EXEC_PY_STAGE _IOWR('M', 0x0d, void*)
 
 #ifdef __cplusplus
 extern "C" {
@@ -74,19 +70,6 @@ struct soft_i2c_configure {
     uint32_t timeout_ms;
 };
 
-// MISC_DEV_CMD_GET_FS_STAT
-struct dfs_statfs {
-    size_t f_bsize; /* block size */
-    size_t f_blocks; /* total data blocks in file system */
-    size_t f_bfree; /* free blocks in file system */
-};
-
-// MISC_DEV_CMD_GET_FS_STAT
-struct statfs_wrap {
-    char              path[FS_STAT_PATH_LENGTH];
-    struct dfs_statfs sb;
-};
-
 // MISC_DEV_CMD_SET_AUTO_EXEC_PY_STAGE
 enum {
     STAGE_NORMAL = 1,
@@ -99,7 +82,7 @@ enum {
     STAGE_MAX,
 };
 
-static __inline __attribute__((__always_inline__)) int canmv_misc_dev_ioctl(int cmd, void* args)
+static inline __attribute__((always_inline)) int canmv_misc_dev_ioctl(int cmd, void* args)
 {
     int result = 0, misc_dev_fd = -1;
 
@@ -118,6 +101,29 @@ static __inline __attribute__((__always_inline__)) int canmv_misc_dev_ioctl(int 
 
     return result;
 }
+
+int canmv_misc_get_sys_heap_size(struct canmv_misc_dev_meminfo_t* meminfo);
+int canmv_misc_get_sys_page_info(struct canmv_misc_dev_meminfo_t* meminfo);
+int canmv_misc_get_sys_mmz_info(struct canmv_misc_dev_meminfo_t* meminfo);
+
+int canmv_misc_get_sys_memory_size(uint64_t* size);
+
+int canmv_misc_get_cpu_usage(int* usage);
+
+int canmv_misc_create_soft_i2c_device(struct soft_i2c_configure* config);
+int canmv_misc_delete_soft_i2c_device(uint32_t bus_num);
+
+int canmv_misc_ntp_sync(void);
+
+int canmv_misc_get_utc_timestamp(time_t* tm);
+int canmv_misc_set_utc_timestamp(time_t tm);
+
+int canmv_misc_get_local_time(struct tm* local_time);
+
+int canmv_misc_set_timezone(int32_t offset);
+int canmv_misc_get_timezone(int32_t* offset);
+
+int canmv_misc_set_auto_exec_py_stage(int stage);
 
 #ifdef __cplusplus
 }
