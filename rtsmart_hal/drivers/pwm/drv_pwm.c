@@ -65,20 +65,22 @@ static int pwm_ioctl(int cmd, void* arg)
 {
     if (0 > _drv_pwm_fd) {
         if (0 > (_drv_pwm_fd = open(DRV_PWM_DEV, O_RDWR))) {
-            printf("[hal_pwm]: open device failed: %s\n", strerror(errno));
+            printf("[hal_pwm]: open device failed\n");
             return -1;
         }
     }
 
     int ret = ioctl(_drv_pwm_fd, cmd, arg);
     if (ret < 0) {
-        printf("[hal_pwm]: ioctl failed: %s\n", strerror(errno));
+        printf("[hal_pwm]: ioctl failed\n");
     }
     return ret;
 }
 
 static int drv_pwm_get_cfg(int channel, uint32_t* period, uint32_t* pulse)
 {
+    PWM_CHECK_CHANNEL(channel);
+
     struct rt_pwm_configuration cfg = { .channel = channel, .period = 0, .pulse = 0 };
 
     if (0 != pwm_ioctl(KD_PWM_CMD_GET_CFG, &cfg)) {
@@ -99,26 +101,22 @@ static int drv_pwm_get_cfg(int channel, uint32_t* period, uint32_t* pulse)
 
 int drv_pwm_set_freq(int channel, uint32_t freq)
 {
+    PWM_CHECK_CHANNEL(channel);
+
     struct rt_pwm_configuration cfg;
 
     uint32_t old_period, old_pulse;
 
-    if (0 != drv_pwm_get_cfg(channel, &old_period, &old_pulse)) {
+    if (drv_pwm_get_cfg(channel, &old_period, &old_pulse) != 0) {
         return -1;
     }
 
-    // Calculate current duty cycle (0-100) based on old config
-    uint32_t duty = 0;
-    if (old_period > 0) {
-        duty = (old_pulse * 100 + old_period / 2) / old_period; // Rounded %
-    }
-
-    // Calculate new period
+    // Set target period (in ns)
     cfg.channel = channel;
     cfg.period  = NSEC_PER_SEC / freq;
 
-    // Recalculate pulse using preserved duty, clamped to period
-    cfg.pulse = (cfg.period * duty + 50) / 100;
+    // Preserve original duty ratio using 64-bit math
+    cfg.pulse = (old_pulse && old_period) ? (uint64_t)cfg.period * old_pulse / old_period : 0;
     if (cfg.pulse > cfg.period) {
         cfg.pulse = cfg.period;
     }
@@ -140,15 +138,8 @@ int drv_pwm_get_freq(int channel, uint32_t* freq)
         return -1;
     }
 
-    if (0x00 == period) {
-        if (freq) {
-            *freq = 0; // Undefined frequency
-        }
-        return 0;
-    }
-
     if (freq) {
-        *freq = NSEC_PER_SEC / period;
+        *freq = period ? NSEC_PER_SEC / period : 0; // Convert period to frequency
     }
 
     return 0;
@@ -157,6 +148,8 @@ int drv_pwm_get_freq(int channel, uint32_t* freq)
 int drv_pwm_set_duty(int channel, uint32_t duty)
 {
     PWM_CHECK_CHANNEL(channel);
+
+    struct rt_pwm_configuration cfg;
 
     if (duty > 100) {
         printf("[hal_pwm]: duty cycle must be <= 100%%\n");
@@ -168,7 +161,9 @@ int drv_pwm_set_duty(int channel, uint32_t duty)
         return -1;
     }
 
-    struct rt_pwm_configuration cfg = { .channel = channel, .period = period, .pulse = (period * duty) / 100 };
+    cfg.channel = channel;
+    cfg.period  = period;
+    cfg.pulse   = duty ? ((uint64_t)period * duty) / 100 : 0;
 
     if (0 != pwm_ioctl(KD_PWM_CMD_SET_CFG, &cfg)) {
         printf("[hal_pwm]: set duty cycle failed for channel %d\n", channel);
@@ -183,7 +178,7 @@ int drv_pwm_get_duty(int channel, uint32_t* duty)
     PWM_CHECK_CHANNEL(channel);
 
     uint32_t period, pulse;
-    if (0 != drv_pwm_get_cfg(channel, &period, &pulse)) {
+    if (drv_pwm_get_cfg(channel, &period, &pulse) != 0) {
         return -1;
     }
 
@@ -195,7 +190,7 @@ int drv_pwm_get_duty(int channel, uint32_t* duty)
     }
 
     if (duty) {
-        *duty = (pulse * 100) / period;
+        *duty = pulse ? ((uint64_t)pulse * 100) / period : 0;
     }
 
     return 0;
