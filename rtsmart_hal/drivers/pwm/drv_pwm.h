@@ -38,6 +38,12 @@ int drv_pwm_get_freq(int channel, uint32_t* freq);
 int drv_pwm_set_duty(int channel, uint32_t duty);
 int drv_pwm_get_duty(int channel, uint32_t* duty);
 
+int drv_pwm_set_duty_u16(int channel, uint16_t duty_u16);
+int drv_pwm_get_duty_u16(int channel, uint16_t* duty_u16);
+
+int drv_pwm_set_duty_ns(int channel, uint32_t pulse_ns);
+int drv_pwm_get_duty_ns(int channel, uint32_t* pulse_ns);
+
 int drv_pwm_enable(int channel);
 int drv_pwm_disable(int channel);
 

@@ -196,6 +196,111 @@ int drv_pwm_get_duty(int channel, uint32_t* duty)
     return 0;
 }
 
+int drv_pwm_set_duty_u16(int channel, uint16_t duty_u16)
+{
+    PWM_CHECK_CHANNEL(channel);
+
+    struct rt_pwm_configuration cfg;
+
+    uint32_t period;
+    if (0 != drv_pwm_get_cfg(channel, &period, NULL)) {
+        return -1;
+    }
+
+    cfg.channel = channel;
+    cfg.period  = period;
+    cfg.pulse   = ((uint64_t)period * duty_u16) >> 16; // Convert 16-bit duty to ns
+
+    if (0 != pwm_ioctl(KD_PWM_CMD_SET_CFG, &cfg)) {
+        printf("[hal_pwm]: set duty cycle failed for channel %d\n", channel);
+        return -1;
+    }
+
+    return 0;
+}
+
+int drv_pwm_get_duty_u16(int channel, uint16_t* duty_u16)
+{
+    PWM_CHECK_CHANNEL(channel);
+
+    uint32_t period, pulse;
+    if (drv_pwm_get_cfg(channel, &period, &pulse) != 0) {
+        return -1; // Failed to get PWM config
+    }
+
+    if (period == 0) {
+        if (duty_u16) {
+            *duty_u16 = 0; // Avoid division by zero
+        }
+        return 0;
+    }
+
+    if (duty_u16) {
+        // Scale pulse width to 16-bit range (0–65535)
+        *duty_u16 = (uint16_t)(((uint64_t)pulse * 65535) / period);
+    }
+
+    return 0;
+}
+
+/**
+ * @brief Set PWM duty cycle in nanoseconds (direct high-time setting)
+ * @param channel PWM channel index
+ * @param pulse_ns High-time duration in nanoseconds (must be ≤ period)
+ * @return 0 on success, -1 on error
+ */
+int drv_pwm_set_duty_ns(int channel, uint32_t pulse_ns)
+{
+    PWM_CHECK_CHANNEL(channel);
+
+    struct rt_pwm_configuration cfg;
+    uint32_t                    period;
+
+    // Get current period (ns)
+    if (drv_pwm_get_cfg(channel, &period, NULL) != 0) {
+        return -1; // Failed to get period
+    }
+
+    // Validate pulse_ns ≤ period
+    if (pulse_ns > period) {
+        pulse_ns = period; // Clamp to period if exceeds
+    }
+
+    // Apply settings
+    cfg.channel = channel;
+    cfg.period  = period;
+    cfg.pulse   = pulse_ns; // Directly set high-time in ns
+
+    if (pwm_ioctl(KD_PWM_CMD_SET_CFG, &cfg) != 0) {
+        printf("[hal_pwm]: set duty (ns) failed for channel %d\n", channel);
+        return -1;
+    }
+
+    return 0;
+}
+
+/**
+ * @brief Get current PWM duty cycle in nanoseconds (actual high-time)
+ * @param channel PWM channel index
+ * @param pulse_ns Output: High-time in nanoseconds (0 ≤ pulse_ns ≤ period)
+ * @return 0 on success, -1 on error
+ */
+int drv_pwm_get_duty_ns(int channel, uint32_t* pulse_ns)
+{
+    PWM_CHECK_CHANNEL(channel);
+
+    uint32_t period, pulse;
+    if (drv_pwm_get_cfg(channel, &period, &pulse) != 0) {
+        return -1; // Failed to get config
+    }
+
+    if (pulse_ns) {
+        *pulse_ns = pulse; // Directly return high-time (ns)
+    }
+
+    return 0;
+}
+
 int drv_pwm_enable(int channel)
 {
     PWM_CHECK_CHANNEL(channel);
