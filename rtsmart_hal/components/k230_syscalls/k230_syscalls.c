@@ -26,6 +26,8 @@
 #include <sys/statfs.h>
 #include <sys/statvfs.h>
 
+#include <pthread.h>
+
 #include "hal_syscall.h"
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -61,4 +63,26 @@ int statvfs(const char* restrict path, struct statvfs* restrict buf)
         return -1;
     fixup(buf, &kbuf);
     return 0;
+}
+
+/*
+#define PMUTEX_INIT    0
+#define PMUTEX_LOCK    1
+#define PMUTEX_UNLOCK  2
+#define PMUTEX_DESTROY 3
+*/
+
+int pthread_mutex_lock(pthread_mutex_t *m)
+{
+    int retry = 0;
+
+    while(0x00 != syscall(_NRSYS_pmutex, (long)m, 1, 0)) {
+        retry++;
+        if (retry > 100) {
+            retry = 0;
+            printf("pthread_mutex_lock: failed to lock mutex after %d tries\n", retry);
+        }
+    }
+
+    return 0; // success
 }
