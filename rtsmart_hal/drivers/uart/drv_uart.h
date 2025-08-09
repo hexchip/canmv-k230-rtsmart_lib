@@ -77,7 +77,10 @@ typedef struct _drv_uart_inst {
     struct uart_configure curr_config;
 } drv_uart_inst_t;
 
-int  drv_uart_inst_create(int id, drv_uart_inst_t** inst);
+#define drv_uart_inst_create(id, inst)      _drv_uart_inst_create(id, NULL, inst)
+#define drv_uart_inst_create_usb(dev, inst) _drv_uart_inst_create(-1, dev, inst)
+
+int  _drv_uart_inst_create(int id, const char* dev, drv_uart_inst_t** inst);
 void drv_uart_inst_destroy(drv_uart_inst_t** inst);
 
 size_t drv_uart_read(drv_uart_inst_t* inst, const uint8_t* buffer, size_t size);
@@ -88,6 +91,8 @@ int drv_uart_poll(drv_uart_inst_t* inst, int timeout_ms);
 size_t drv_uart_recv_available(drv_uart_inst_t* inst);
 
 int drv_uart_configure_buffer_size(int id, uint16_t size);
+
+int drv_uart_is_dtr_asserted(drv_uart_inst_t* inst);
 
 int drv_uart_send_break(drv_uart_inst_t* inst);
 

@@ -41,7 +41,8 @@
 
 #define UART_IOCTL_SET_CONFIG _IOW('U', 0, void*)
 #define UART_IOCTL_GET_CONFIG _IOR('U', 1, void*)
-#define UART_IOCTL_SEND_BREK  _IOR('U', 2, void*)
+#define UART_IOCTL_SEND_BREAK _IOR('U', 2, void*)
+#define UART_IOCTL_GET_DTR    _IOR('U', 3, void*)
 
 static const int _drv_uart_inst_type; /**< Unique identifier for UART instance type */
 static int       _drv_uart_state[KD_HARD_UART_MAX_NUM]; /**< Tracks usage state of each UART interface */
@@ -49,13 +50,14 @@ static int       _drv_uart_state[KD_HARD_UART_MAX_NUM]; /**< Tracks usage state 
 /**
  * @brief Create a UART driver instance
  * @param id UART interface ID (0 to KD_HARD_UART_MAX_NUM-1)
+ * @param dev UART Device Name (used for cdc and lte serial device)
  * @param inst Double pointer to store the created instance
  * @return 0 on success, negative error code on failure:
  *         -1: Invalid parameters
  *         -2: Invalid UART ID
  *         -3: Memory allocation failed
  */
-int drv_uart_inst_create(int id, drv_uart_inst_t** inst)
+int _drv_uart_inst_create(int id, const char* dev, drv_uart_inst_t** inst)
 {
     int  fd = -1;
     char dev_name[64];
@@ -65,16 +67,25 @@ int drv_uart_inst_create(int id, drv_uart_inst_t** inst)
         return -1;
     }
 
-    /* Check UART ID range */
-    if (KD_HARD_UART_MAX_NUM <= id) {
-        printf("[hal_uart]: invalid id\n");
-        return -2;
-    }
+    if (NULL == dev) {
+        /* Check UART ID range */
+        if (KD_HARD_UART_MAX_NUM <= id) {
+            printf("[hal_uart]: invalid id\n");
+            return -2;
+        }
 
-    /* Check if UART is already in use */
-    if (0x00 != _drv_uart_state[id]) {
-        printf("[hal_uart]: uart%d maybe in use\n", id);
+        /* Check if UART is already in use */
+        if (0x00 != _drv_uart_state[id]) {
+            printf("[hal_uart]: uart%d maybe in use\n", id);
+        }
+
+        snprintf(dev_name, sizeof(dev_name), "/dev/uart%d", id);
+    } else {
+        id = -1;
+
+        strncpy(dev_name, dev, sizeof(dev_name) - 1);
     }
+    dev_name[sizeof(dev_name) - 1] = '\0';
 
     /* Clean up existing instance if provided */
     if (*inst) {
@@ -83,7 +94,6 @@ int drv_uart_inst_create(int id, drv_uart_inst_t** inst)
     }
 
     /* Open UART device */
-    snprintf(dev_name, sizeof(dev_name), "/dev/uart%d", id);
     if (0 > (fd = open(dev_name, O_RDWR | O_NONBLOCK))) {
         printf("[hal_uart]: open %s failed\n", dev_name);
         return -1;
@@ -104,7 +114,9 @@ int drv_uart_inst_create(int id, drv_uart_inst_t** inst)
     (*inst)->fd   = fd;
 
     /* Mark UART as in use */
-    _drv_uart_state[id] = 1;
+    if ((0 <= id) && (KD_HARD_UART_MAX_NUM > id)) {
+        _drv_uart_state[id] = 1;
+    }
 
     return 0;
 }
@@ -139,7 +151,7 @@ void drv_uart_inst_destroy(drv_uart_inst_t** inst)
     }
 
     /* Mark UART as available */
-    if (KD_HARD_UART_MAX_NUM > id) {
+    if ((0 <= id) && (KD_HARD_UART_MAX_NUM > id)) {
         _drv_uart_state[id] = 0;
     }
 
@@ -264,6 +276,44 @@ size_t drv_uart_recv_available(drv_uart_inst_t* inst)
 }
 
 /**
+ * @brief Check whether the UART DTR (Data Terminal Ready) signal is asserted.
+ *
+ * This function verifies if the DTR line is active for the specified UART instance.
+ * If the DTR signal is not asserted, data transmission to the peer may be blocked.
+ *
+ * Special case: For hardware UART instances within the valid ID range
+ * (0 to KD_HARD_UART_MAX_NUM - 1), the function always returns 1
+ * as these ports are considered always ready.
+ *
+ * @param inst Pointer to the UART driver instance.
+ *
+ * @return
+ *   1  : DTR is asserted (ready to send data)
+ *   0  : DTR is not asserted (not ready)
+ *  -1  : Invalid parameters (NULL pointer or invalid file descriptor)
+ *  -2  : IOCTL error when retrieving DTR state
+ */
+int drv_uart_is_dtr_asserted(drv_uart_inst_t* inst)
+{
+    /* Parameter validation */
+    if (inst == NULL || inst->fd == -1) {
+        return -1;
+    }
+
+    int id = inst->id;
+    if ((0 <= id) && (KD_HARD_UART_MAX_NUM > id)) {
+        return 1;
+    }
+
+    int dtr = 0;
+    if (ioctl(inst->fd, UART_IOCTL_GET_DTR, &dtr) < 0) {
+        return -2;
+    }
+
+    return dtr;
+}
+
+/**
  * @brief Send a break condition on the UART TX line.
  *
  * This function sends a UART break signal, which forces the TX line to a low
@@ -287,7 +337,7 @@ int drv_uart_send_break(drv_uart_inst_t* inst)
     }
 
     /* Send break via IOCTL */
-    if (ioctl(inst->fd, UART_IOCTL_SEND_BREK, NULL) < 0) {
+    if (ioctl(inst->fd, UART_IOCTL_SEND_BREAK, NULL) < 0) {
         return -2;
     }
 
