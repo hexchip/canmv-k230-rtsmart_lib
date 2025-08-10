@@ -59,10 +59,9 @@ int drv_adc_init()
             printf("[hal_adc]: open device failed\n");
             return -1;
         }
+        pthread_spin_init(&_drv_adc_lock, 0);
     }
     _drv_adc_ref_cnt++;
-
-    pthread_spin_init(&_drv_adc_lock, 0);
 
     return 0;
 }
@@ -130,6 +129,10 @@ uint32_t drv_adc_read_uv(int channel, uint32_t ref_uv)
     uint64_t read_u64, ref_u64;
 
     read = drv_adc_read(channel);
+
+    if (read == __UINT32_MAX__) {
+        return __UINT32_MAX__; // Error reading ADC
+    }
 
     read_u64 = (uint64_t)read;
     ref_u64  = (uint64_t)ref_uv;
