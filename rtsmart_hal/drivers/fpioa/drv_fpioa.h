@@ -262,6 +262,13 @@ typedef enum _fpioa_func {
     FUNC_MAX,
 } fpioa_func_t;
 
+typedef enum {
+    FPIOA_OK              = 0, // Success
+    FPIOA_ERR_UNSUPPORTED = -1, // Pin does not support this function
+    FPIOA_ERR_SET_FAIL    = -2, // Failed to set pin function
+    FPIOA_ERR_NOT_CONFIG  = -3 // Function not configured on any pin
+} fpioa_err_t;
+
 typedef struct _fpioa_iomux_cfg {
     union {
         struct {
@@ -301,6 +308,8 @@ int drv_fpioa_get_pin_alt_func_names(int pin, char* buf, size_t buf_size);
 int drv_fpioa_find_pin_by_func(fpioa_func_t func);
 int drv_fpioa_is_func_supported_by_pin(int pin, fpioa_func_t func);
 
+fpioa_err_t drv_fpioa_validate_pin(int pin, int func);
+
 /* for fpioa configure generator. */
 typedef struct _fpioa_func_cfg {
     fpioa_func_t func;
@@ -310,28 +319,28 @@ typedef struct _fpioa_func_cfg {
 
 const fpioa_func_cfg_t* drv_fpioa_get_func_cfg(fpioa_func_t func);
 
-#define DRV_FPIOA_SET_TEMPLATE(item)                                                                                   \
-    static inline __attribute__((__always_inline__)) int drv_fpioa_set_pin_##item(int pin, int value)                  \
-    {                                                                                                                  \
-        fpioa_iomux_cfg_t cfg;                                                                                         \
-        if (drv_fpioa_get_pin_cfg(pin, &cfg.u.value) != 0) {                                                           \
-            return -1;                                                                                                 \
-        }                                                                                                              \
-        if (cfg.u.bit.item != value) {                                                                                 \
-            cfg.u.bit.item = value;                                                                                    \
-            return drv_fpioa_set_pin_cfg(pin, cfg.u.value);                                                            \
-        }                                                                                                              \
-        return 0;                                                                                                      \
+#define DRV_FPIOA_SET_TEMPLATE(item)                                                                                           \
+    static inline __attribute__((__always_inline__)) int drv_fpioa_set_pin_##item(int pin, int value)                          \
+    {                                                                                                                          \
+        fpioa_iomux_cfg_t cfg;                                                                                                 \
+        if (drv_fpioa_get_pin_cfg(pin, &cfg.u.value) != 0) {                                                                   \
+            return -1;                                                                                                         \
+        }                                                                                                                      \
+        if (cfg.u.bit.item != value) {                                                                                         \
+            cfg.u.bit.item = value;                                                                                            \
+            return drv_fpioa_set_pin_cfg(pin, cfg.u.value);                                                                    \
+        }                                                                                                                      \
+        return 0;                                                                                                              \
     }
 
-#define DRV_FPIOA_GET_TEMPLATE(item)                                                                                   \
-    static inline __attribute__((__always_inline__)) int drv_fpioa_get_pin_##item(int pin)                             \
-    {                                                                                                                  \
-        fpioa_iomux_cfg_t cfg;                                                                                         \
-        if (drv_fpioa_get_pin_cfg(pin, &cfg.u.value) != 0) {                                                           \
-            return -1;                                                                                                 \
-        }                                                                                                              \
-        return cfg.u.bit.item;                                                                                         \
+#define DRV_FPIOA_GET_TEMPLATE(item)                                                                                           \
+    static inline __attribute__((__always_inline__)) int drv_fpioa_get_pin_##item(int pin)                                     \
+    {                                                                                                                          \
+        fpioa_iomux_cfg_t cfg;                                                                                                 \
+        if (drv_fpioa_get_pin_cfg(pin, &cfg.u.value) != 0) {                                                                   \
+            return -1;                                                                                                         \
+        }                                                                                                                      \
+        return cfg.u.bit.item;                                                                                                 \
     }
 
 // int drv_fpioa_set_pin_st(int pin, int value);

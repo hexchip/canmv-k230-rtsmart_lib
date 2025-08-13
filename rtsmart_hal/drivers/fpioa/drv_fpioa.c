@@ -357,7 +357,7 @@ int drv_fpioa_set_pin_func(int pin, fpioa_func_t func)
     }
 
     /* if set pin to GPIO, we not check too strictly */
-    if((GPIO63 >= func) && (GPIO0 <= func)) {
+    if ((GPIO63 >= func) && (GPIO0 <= func)) {
         found    = 1;
         func_sel = 0;
     }
@@ -375,9 +375,9 @@ int drv_fpioa_set_pin_func(int pin, fpioa_func_t func)
                         printf("[hal_fpioa]: get pin %d cfg failed.\n", alt_pins[i]);
                         continue;
                     }
-                    cfg.u.value   = 0;
+                    cfg.u.value      = 0;
                     cfg.u.bit.io_sel = 0;
-                    cfg.u.bit.msc = cfg_tmp.u.bit.msc;
+                    cfg.u.bit.msc    = cfg_tmp.u.bit.msc;
 
                     drv_fpioa_set_pin_cfg(alt_pins[i], cfg.u.value);
                 }
@@ -396,7 +396,7 @@ int drv_fpioa_set_pin_func(int pin, fpioa_func_t func)
         printf("[hal_fpioa]: get pin cfg %d failed\n", pin);
         return -1;
     }
-    cfg.u.bit.msc    = cfg_tmp.u.bit.msc;
+    cfg.u.bit.msc = cfg_tmp.u.bit.msc;
 
     return drv_fpioa_set_pin_cfg(pin, cfg.u.value);
 }
@@ -537,4 +537,33 @@ int drv_fpioa_is_func_supported_by_pin(int pin, fpioa_func_t func)
     }
 
     return 0;
+}
+
+/**
+ * Validate and optionally configure a pin for a specific function.
+ *
+ * @param pin  Pin number to configure. If -1, just check if the function is already mapped.
+ * @param func Function ID to assign to the pin.
+ * @return     fpioa_err_t value
+ */
+fpioa_err_t drv_fpioa_validate_pin(int pin, int func)
+{
+    int existing_pin;
+
+    if (pin != -1) {
+        if (!drv_fpioa_is_func_supported_by_pin(pin, func)) {
+            return FPIOA_ERR_UNSUPPORTED;
+        }
+
+        if (drv_fpioa_set_pin_func(pin, func) != 0) {
+            return FPIOA_ERR_SET_FAIL;
+        }
+    } else {
+        existing_pin = drv_fpioa_find_pin_by_func(func);
+        if (existing_pin < 0) {
+            return FPIOA_ERR_NOT_CONFIG;
+        }
+    }
+
+    return FPIOA_OK;
 }
