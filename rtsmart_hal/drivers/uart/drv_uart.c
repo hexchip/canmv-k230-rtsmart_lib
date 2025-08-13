@@ -169,7 +169,7 @@ void drv_uart_inst_destroy(drv_uart_inst_t** inst)
  *         -1: Invalid parameters
  *         -2: Read error
  */
-size_t drv_uart_read(drv_uart_inst_t* inst, const uint8_t* buffer, size_t size)
+size_t drv_uart_read(drv_uart_inst_t* inst, uint8_t* buffer, size_t size)
 {
     /* Parameter validation */
     if (inst == NULL || inst->fd == -1 || buffer == NULL) {
@@ -197,7 +197,7 @@ size_t drv_uart_read(drv_uart_inst_t* inst, const uint8_t* buffer, size_t size)
  *         -1: Invalid parameters
  *         -2: Write error
  */
-size_t drv_uart_write(drv_uart_inst_t* inst, uint8_t* buffer, size_t size)
+size_t drv_uart_write(drv_uart_inst_t* inst, const uint8_t* buffer, size_t size)
 {
     /* Parameter validation */
     if (inst == NULL || inst->fd == -1 || buffer == NULL) {
