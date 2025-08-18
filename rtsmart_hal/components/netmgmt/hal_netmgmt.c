@@ -143,19 +143,24 @@ static int _netmgmt_ioctl_with_type_rt_wlan_connect_config(uint32_t cmd, struct 
 
     memset(&config, 0x00, sizeof(config));
 
-    if ((!ssid || !info) && !password) {
+    if ((!ssid && !info)) {
         printf("[hal_netmgmt]: %s invalid args\n", __FUNCTION__);
         return -1;
     }
 
-    password_length = strlen(password);
-    if (RT_WLAN_SSID_MAX_LENGTH < password_length) {
-        printf("[hal_netmgmt]: %s invalid password length\n", __FUNCTION__);
-        return -1;
-    }
+    if(password) {
+        password_length = strlen(password);
+        if (RT_WLAN_SSID_MAX_LENGTH < password_length) {
+            printf("[hal_netmgmt]: %s invalid password length\n", __FUNCTION__);
+            return -1;
+        }
 
-    config.key.len = (uint8_t)password_length & 0xFF;
-    strncpy((char*)&config.key.val, password, RT_WLAN_SSID_MAX_LENGTH);
+        config.key.len = (uint8_t)password_length & 0xFF;
+        strncpy((char*)&config.key.val, password, RT_WLAN_SSID_MAX_LENGTH);
+    }else {
+        config.key.len = 0;
+        config.key.val[0] = '\0';
+    }
 
     if (ssid) {
         config.use_info = 0;
@@ -253,7 +258,7 @@ int netmgmt_wlan_sta_connect_with_ssid(char* ssid, char* password)
     size_t                ssid_length = 0;
     struct rt_wlan_ssid_t _ssid;
 
-    if (!ssid || !password) {
+    if (!ssid) {
         printf("[hal_netmgmt]: %s invalid args\n", __FUNCTION__);
         return -1;
     }
@@ -273,7 +278,7 @@ int netmgmt_wlan_sta_connect_with_ssid(char* ssid, char* password)
 
 int netmgmt_wlan_sta_connect_with_scan_info(struct rt_wlan_info_t* info, char* password)
 {
-    if (!info || !password) {
+    if (!info) {
         printf("[hal_netmgmt]: %s invalid args\n", __FUNCTION__);
         return -1;
     }
