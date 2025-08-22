@@ -167,6 +167,56 @@ int drv_spi_write(drv_spi_inst_t inst, const void *tx_data, size_t len, bool cs_
  */
 int drv_spi_transfer_message(drv_spi_inst_t inst, struct rt_qspi_message *msg);
 
+/**
+ * @brief set spi baudrate(frequency)
+ *
+ * @param inst: SPI inst
+ * @param baudrate: baudrate to set
+ *
+ * @return 0 on success, negative on error
+ */
+int drv_spi_set_baudrate(drv_spi_inst_t inst, uint32_t baudrate);
+
+/**
+ * @brief set spi data mode
+ *
+ * @param inst: SPI inst
+ * @param mode: datamode to set
+ *
+ * @return 0 on success, negative on error
+ */
+int drv_spi_set_datamode(drv_spi_inst_t inst, uint8_t mode);
+
+/**
+ * @brief set spi chip select polarity
+ *
+ * @param inst: SPI inst
+ * @param is_active_hi: true means cs is acvite hi
+ *
+ * @return 0 on success, negative on error
+ */
+int drv_spi_set_cs_polarity(drv_spi_inst_t inst, bool is_active_hi);
+
+/**
+ * @brief set cs mode
+ *
+ * @param inst: SPI inst
+ * @param use_hw_cs: true means use hardware cs
+ *
+ * @return 0 on success, negative on error
+ */
+int drv_spi_set_cs_mode(drv_spi_inst_t inst, bool use_hw_cs);
+
+/**
+ * @brief set spi data bits
+ *
+ * @param inst: SPI inst
+ * @param data_bits: data bits to set
+ *
+ * @return 0 on success, negative on error
+ */
+int drv_spi_set_data_bits(drv_spi_inst_t inst, uint8_t data_bits);
+
 #ifdef __cplusplus
 }
 #endif

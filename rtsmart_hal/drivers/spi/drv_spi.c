@@ -377,3 +377,144 @@ int drv_spi_transfer_message(drv_spi_inst_t inst, struct rt_qspi_message *msg)
 out:
     return ret;
 }
+
+static int drv_spi_update_config(drv_spi_inst_t inst)
+{
+    int ret;
+    struct rt_qspi_configuration spi_config;
+
+    memset(&spi_config, 0, sizeof(spi_config));
+
+    spi_config.parent.mode = inst->mode;
+    spi_config.parent.data_width = inst->data_bits;
+
+    spi_config.parent.hard_cs = 0;
+    if (inst->cs_pin != -1) {
+        spi_config.parent.soft_cs = inst->cs_pin | 0x80;
+    } else {
+        spi_config.parent.soft_cs = 0;
+    }
+
+    spi_config.parent.max_hz = inst->baudrate;
+    spi_config.qspi_dl_width = inst->data_line;
+
+    if ((ret = ioctl(inst->dev_fd, RT_SPI_DEV_CTRL_CONFIG, &spi_config))) {
+        printf("[hal_spi]: spi config fail: %s (errno: %d, ret: %d)\n", strerror(errno), errno, ret);
+    }
+
+    return ret;
+}
+
+int drv_spi_set_baudrate(drv_spi_inst_t inst, uint32_t baudrate)
+{
+    int ret = 0;
+
+    if (!inst || inst->dev_fd < 0) {
+        printf("[hal_spi]: pls drv_spi_inst_create first\n");
+        ret = -1;
+        goto out;
+    }
+
+    pthread_spin_lock(&lock[inst->spi_id]);
+    inst->baudrate = baudrate;
+    ret = drv_spi_update_config(inst);
+    pthread_spin_unlock(&lock[inst->spi_id]);
+
+out:
+    return ret;
+}
+
+int drv_spi_set_datamode(drv_spi_inst_t inst, uint8_t mode)
+{
+    int ret = 0;
+
+    if (!inst || inst->dev_fd < 0) {
+        printf("[hal_spi]: pls drv_spi_inst_create first\n");
+        ret = -1;
+        goto out;
+    }
+
+    pthread_spin_lock(&lock[inst->spi_id]);
+    inst->mode = mode;
+    ret = drv_spi_update_config(inst);
+    pthread_spin_unlock(&lock[inst->spi_id]);
+
+out:
+    return ret;
+}
+
+int drv_spi_set_cs_polarity(drv_spi_inst_t inst, bool is_active_hi)
+{
+    int ret = 0;
+
+    if (!inst || inst->dev_fd < 0) {
+        printf("[hal_spi]: pls drv_spi_inst_create first\n");
+        ret = -1;
+        goto out;
+    }
+
+    if (inst->cs_pin != -1) {
+        pthread_spin_lock(&lock[inst->spi_id]);
+        if (is_active_hi) {
+            inst->mode |= SPI_CS_ACTIVE_HIGH;
+            drv_gpio_value_set(inst->gpio_cs, GPIO_PV_LOW);
+        } else {
+            inst->mode &= ~SPI_CS_ACTIVE_HIGH;
+            drv_gpio_value_set(inst->gpio_cs, GPIO_PV_HIGH);
+        }
+        ret = drv_spi_update_config(inst);
+        pthread_spin_unlock(&lock[inst->spi_id]);
+    }
+
+out:
+    return ret;
+}
+
+int drv_spi_set_cs_mode(drv_spi_inst_t inst, bool use_hw_cs)
+{
+    int ret = 0;
+
+    if (!inst || inst->dev_fd < 0) {
+        printf("[hal_spi]: pls drv_spi_inst_create first\n");
+        ret = -1;
+        goto out;
+    }
+
+    pthread_spin_lock(&lock[inst->spi_id]);
+    if (!use_hw_cs) {
+        int cs;
+
+        cs = inst->cs_pin;
+        inst->cs_pin = -1;
+        ret = drv_spi_update_config(inst);
+        inst->cs_pin = cs;
+    } else {
+        if (inst->cs_pin == -1) {
+            printf("pls offer hw cs pin\n");
+            ret = -1;
+        }
+    }
+    pthread_spin_unlock(&lock[inst->spi_id]);
+
+out:
+    return ret;
+}
+
+int drv_spi_set_data_bits(drv_spi_inst_t inst, uint8_t data_bits)
+{
+    int ret = 0;
+
+    if (!inst || inst->dev_fd < 0) {
+        printf("[hal_spi]: pls drv_spi_inst_create first\n");
+        ret = -1;
+        goto out;
+    }
+
+    pthread_spin_lock(&lock[inst->spi_id]);
+    inst->data_bits = data_bits;
+    ret = drv_spi_update_config(inst);
+    pthread_spin_unlock(&lock[inst->spi_id]);
+
+out:
+    return ret;
+}
