@@ -229,6 +229,7 @@ NRSYS(statfs)
 /* clang-format on */
 
 typedef void* rt_device_t;
+typedef void* rt_mq_t;
 
 static inline __attribute__((always_inline)) rt_device_t rt_device_find(const char* name)
 {
@@ -248,6 +249,31 @@ static inline __attribute__((always_inline)) uint32_t rt_hw_interrupt_disable(vo
 static inline __attribute__((always_inline)) void rt_hw_interrupt_enable(uint32_t level)
 {
     syscall(_NRSYS_rt_hw_interrupt_enable, (long)level);
+}
+
+static inline __attribute__((always_inline)) rt_mq_t rt_mq_create(const char *name, unsigned long msg_size, unsigned long max_msgs, uint8_t flag)
+{
+    return (rt_mq_t)syscall(_NRSYS_mq_create, name, msg_size, max_msgs, flag);
+}
+
+static inline __attribute__((always_inline)) long rt_mq_delete(rt_mq_t mq)
+{
+    return syscall(_NRSYS_mq_delete, mq);
+}
+
+static inline __attribute__((always_inline)) long rt_mq_send(rt_mq_t mq, void *buffer, unsigned long size)
+{
+    return syscall(_NRSYS_mq_send, mq, buffer, size);
+}
+
+static inline __attribute__((always_inline)) long rt_mq_recv(rt_mq_t mq, void *buffer, unsigned long size, unsigned int timeout)
+{
+    return syscall(_NRSYS_mq_recv, mq, buffer, size, timeout);
+}
+
+static inline __attribute__((always_inline)) long rt_mq_urgent(rt_mq_t mq, void *buffer, unsigned long size)
+{
+    return syscall(_NRSYS_mq_urgent, mq, buffer, size);
 }
 
 #ifdef __cplusplus
