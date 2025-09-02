@@ -1,6 +1,6 @@
 include ../../mkenv.mk
 
-subdirs-y := fpioa gpio timer sbus i2c adc tsensor wdt spi pwm uart ws2812
+subdirs-y := fpioa gpio timer sbus i2c adc tsensor wdt spi pwm uart ws2812 onewire
 
 .PHONY: all clean distclean
 
