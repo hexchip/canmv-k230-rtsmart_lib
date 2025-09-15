@@ -57,6 +57,10 @@
 
 #define IEEE_8021X_ENABLED 0x80000000
 
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
 enum rt_wlan_security_t {
     SECURITY_OPEN                 = 0, /**< Open security                                 */
     SECURITY_WEP_PSK              = WEP_ENABLED, /**< WEP PSK Security with open authentication     */
@@ -366,3 +370,7 @@ int netmgmt_utils_set_ifconfig_static(enum rt_netif_t itf, struct ifconfig_t* co
  * @return 0 on success, -1 on failure.
  */
 int netmgmt_utils_set_ifconfig_dhcp(enum rt_netif_t itf);
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */

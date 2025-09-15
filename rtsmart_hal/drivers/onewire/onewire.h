@@ -27,9 +27,17 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
 int onewire_reset(int pin);
 int onewire_write_byte(int pin, uint8_t data);
 uint8_t onewire_read_byte(int pin);
 int onewire_search_rom(int pin, uint8_t rom[8], uint8_t l_rom[8], int* diff_in);
 
 uint64_t pin_pulse_us(int pin, int pulse_level, uint64_t timeout_us);
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
