@@ -94,9 +94,10 @@ enum rt_802_11_band_t {
 };
 
 enum rt_netif_t {
-    RT_NET_DEV_WLAN_STA = 0,
-    RT_NET_DEV_WLAN_AP  = 1,
-    RT_NET_DEV_USB      = 2,
+    RT_NET_DEV_WLAN_STA    = 0,
+    RT_NET_DEV_WLAN_AP     = 1,
+    RT_NET_DEV_USB_RTL8152 = 2,
+    RT_NET_DEV_USB_ECM     = 3,
 };
 
 struct rt_wlan_ssid_t {
@@ -291,32 +292,38 @@ int netmgmt_wlan_ap_get_country(int* country);
 int netmgmt_wlan_ap_set_country(int country);
 
 /**
- * @brief Check if LAN cable is connected.
- * @param[out] status 1 if connected, 0 if not.
+ * @brief Checks if a LAN interface is connected.
+ * This is determined by both the physical link being up and a valid IP address being assigned.
+ * @param[in] itf The network interface enum (e.g., `RT_NET_DEV_USB_RTL8152`).
+ * @param[out] status Pointer to an integer to store the connection status: 1 if connected, 0 if not.
  * @return 0 on success, -1 on failure.
  */
-int netmgmt_lan_get_isconnected(int* status);
+int netmgmt_lan_get_isconnected(enum rt_netif_t itf, int* status);
 
 /**
- * @brief Get LAN link status.
- * @param[out] status 1 if link is up, 0 if down.
+ * @brief Gets the physical link status of a LAN interface.
+ * @param[in] itf The network interface enum.
+ * @param[out] status Pointer to an integer to store the link status: 1 if link is up, 2 if link is down, 0 if unable to get
+ * status.
  * @return 0 on success, -1 on failure.
  */
-int netmgmt_lan_get_link_status(int* status);
+int netmgmt_lan_get_link_status(enum rt_netif_t itf, int* status);
 
 /**
- * @brief Get current LAN MAC address.
- * @param[out] mac Buffer to store MAC address.
+ * @brief Gets the current MAC address of a LAN interface.
+ * @param[in] itf The network interface enum.
+ * @param[out] mac A buffer to copy the 6-byte MAC address into. The buffer size should be at least `RT_WLAN_BSSID_MAX_LENGTH`.
  * @return 0 on success, -1 on failure.
  */
-int netmgmt_lan_get_mac(uint8_t mac[RT_WLAN_BSSID_MAX_LENGTH]);
+int netmgmt_lan_get_mac(enum rt_netif_t itf, uint8_t mac[RT_WLAN_BSSID_MAX_LENGTH]);
 
 /**
- * @brief Set LAN MAC address.
- * @param[in] mac MAC address to set.
+ * @brief Sets the MAC address for a LAN interface.
+ * @param[in] itf The network interface enum.
+ * @param[in] mac The 6-byte MAC address to set. The buffer size should be at least `RT_WLAN_BSSID_MAX_LENGTH`.
  * @return 0 on success, -1 on failure.
  */
-int netmgmt_lan_set_mac(uint8_t mac[RT_WLAN_BSSID_MAX_LENGTH]);
+int netmgmt_lan_set_mac(enum rt_netif_t itf, uint8_t mac[RT_WLAN_BSSID_MAX_LENGTH]);
 
 /**
  * @brief Get name of the default network device.

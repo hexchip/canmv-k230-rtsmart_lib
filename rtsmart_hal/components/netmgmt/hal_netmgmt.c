@@ -112,6 +112,18 @@ struct ifconfig_cmd {
     struct ip_addr_t dns; /* DNS server */
 };
 
+struct lan_status_cmd_wrap_t {
+    enum rt_netif_t itf;
+
+    int value;
+};
+
+struct lan_mac_cmd_wrap_t {
+    enum rt_netif_t itf;
+
+    uint8_t mac[6];
+};
+
 static int _netmgmt_ioctl(uint32_t cmd, void* arg)
 {
     int result = -1;
@@ -148,7 +160,7 @@ static int _netmgmt_ioctl_with_type_rt_wlan_connect_config(uint32_t cmd, struct 
         return -1;
     }
 
-    if(password) {
+    if (password) {
         password_length = strlen(password);
         if (RT_WLAN_SSID_MAX_LENGTH < password_length) {
             printf("[hal_netmgmt]: %s invalid password length\n", __FUNCTION__);
@@ -157,8 +169,8 @@ static int _netmgmt_ioctl_with_type_rt_wlan_connect_config(uint32_t cmd, struct 
 
         config.key.len = (uint8_t)password_length & 0xFF;
         strncpy((char*)&config.key.val, password, RT_WLAN_SSID_MAX_LENGTH);
-    }else {
-        config.key.len = 0;
+    } else {
+        config.key.len    = 0;
         config.key.val[0] = '\0';
     }
 
@@ -585,63 +597,73 @@ int netmgmt_wlan_ap_set_country(int country)
 }
 
 /* lan */
-int netmgmt_lan_get_isconnected(int* status)
+int netmgmt_lan_get_isconnected(enum rt_netif_t itf, int* status)
 {
-    int _status = -1;
+    struct lan_status_cmd_wrap_t cfg = {
+        .itf   = itf,
+        .value = -1,
+    };
 
-    if (0x00 != _netmgmt_ioctl(IOCTRL_LAN_GET_ISCONNECTED, &_status)) {
+    if (0x00 != _netmgmt_ioctl(IOCTRL_LAN_GET_ISCONNECTED, &cfg)) {
         printf("[hal_netmgmt]: %s failed\n", __FUNCTION__);
         return -1;
     }
 
     if (status) {
-        *status = _status;
+        *status = cfg.value;
     }
 
     return 0;
 }
 
-int netmgmt_lan_get_link_status(int* status)
+int netmgmt_lan_get_link_status(enum rt_netif_t itf, int* status)
 {
-    int _status = -1;
+    struct lan_status_cmd_wrap_t cfg = {
+        .itf   = itf,
+        .value = -1,
+    };
 
-    if (0x00 != _netmgmt_ioctl(IOCTRL_LAN_GET_LINK_STATUS, &_status)) {
+    if (0x00 != _netmgmt_ioctl(IOCTRL_LAN_GET_LINK_STATUS, &cfg)) {
         printf("[hal_netmgmt]: %s failed\n", __FUNCTION__);
         return -1;
     }
 
     if (status) {
-        *status = _status;
+        *status = cfg.value;
     }
 
     return 0;
 }
 
-int netmgmt_lan_get_mac(uint8_t mac[RT_WLAN_BSSID_MAX_LENGTH])
+int netmgmt_lan_get_mac(enum rt_netif_t itf, uint8_t mac[RT_WLAN_BSSID_MAX_LENGTH])
 {
-    uint8_t _mac[RT_WLAN_BSSID_MAX_LENGTH];
+    struct lan_mac_cmd_wrap_t cfg = {
+        .itf = itf,
+    };
 
-    if (0x00 != _netmgmt_ioctl(IOCTRL_LAN_GET_MAC, &_mac[0])) {
+    if (0x00 != _netmgmt_ioctl(IOCTRL_LAN_GET_MAC, &cfg)) {
         printf("[hal_netmgmt]: %s failed\n", __FUNCTION__);
         return -1;
     }
 
     if (mac) {
-        memcpy(mac, _mac, RT_WLAN_BSSID_MAX_LENGTH);
+        memcpy(mac, cfg.mac, RT_WLAN_BSSID_MAX_LENGTH);
     }
 
     return 0;
 }
 
-int netmgmt_lan_set_mac(uint8_t mac[RT_WLAN_BSSID_MAX_LENGTH])
+int netmgmt_lan_set_mac(enum rt_netif_t itf, uint8_t mac[RT_WLAN_BSSID_MAX_LENGTH])
 {
-    uint8_t _mac[RT_WLAN_BSSID_MAX_LENGTH];
+    struct lan_mac_cmd_wrap_t cfg = {
+        .itf = itf,
+    };
 
     if (mac) {
-        memcpy(_mac, mac, RT_WLAN_BSSID_MAX_LENGTH);
+        memcpy(cfg.mac, mac, RT_WLAN_BSSID_MAX_LENGTH);
     }
 
-    if (0x00 != _netmgmt_ioctl(IOCTRL_LAN_SET_MAC, &_mac[0])) {
+    if (0x00 != _netmgmt_ioctl(IOCTRL_LAN_SET_MAC, &cfg)) {
         printf("[hal_netmgmt]: %s failed\n", __FUNCTION__);
         return -1;
     }
