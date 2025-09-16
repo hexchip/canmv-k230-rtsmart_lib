@@ -159,8 +159,9 @@ static void test_lan()
     STEP("LAN: Status + MAC");
 
     int conn = -1, link = -1;
+    enum rt_netif_t lan_itf = RT_NET_DEV_USB_RTL8152; // Specify the LAN interface
 
-    if (netmgmt_lan_get_isconnected(&conn) == 0) {
+    if (netmgmt_lan_get_isconnected(lan_itf, &conn) == 0) {
         if (conn)
             PASS("Cable is connected");
         else
@@ -169,7 +170,7 @@ static void test_lan()
         FAIL("Failed to get cable connection status");
     }
 
-    if (netmgmt_lan_get_link_status(&link) == 0) {
+    if (netmgmt_lan_get_link_status(lan_itf, &link) == 0) {
         if (link)
             PASS("Link is up");
         else
@@ -181,10 +182,10 @@ static void test_lan()
     printf("  [LAN Status] isconnected=%d, link=%d\n", conn, link);
 
     uint8_t mac[RT_WLAN_BSSID_MAX_LENGTH] = { 0 };
-    CHECK_OK(netmgmt_lan_get_mac(mac), "Get LAN MAC");
+    CHECK_OK(netmgmt_lan_get_mac(lan_itf, mac), "Get LAN MAC");
     printf("  MAC: %02X:%02X:%02X:%02X:%02X:%02X\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 
-    CHECK_OK(netmgmt_lan_set_mac(mac), "Set MAC");
+    CHECK_OK(netmgmt_lan_set_mac(lan_itf, mac), "Set MAC");
 
     STEP("LAN: Static IP config");
 
@@ -194,16 +195,18 @@ static void test_lan()
         .netmask.addr = TEST_LAN_STATIC_MASK,
         .dns.addr     = TEST_LAN_STATIC_DNS,
     };
-    CHECK_OK(netmgmt_utils_set_ifconfig_static(RT_NET_DEV_USB, &cfg), "Set static config");
+    // The original test used RT_NET_DEV_USB, which is now part of the LAN API.
+    // The new API uses specific interfaces. We'll use RT_NET_DEV_USB_RTL8152 for this test.
+    CHECK_OK(netmgmt_utils_set_ifconfig_static(lan_itf, &cfg), "Set static config");
     DELAY_SEC(1);
 
-    CHECK_OK(netmgmt_utils_get_ifconfig(RT_NET_DEV_USB, &cfg), "Verify static config");
+    CHECK_OK(netmgmt_utils_get_ifconfig(lan_itf, &cfg), "Verify static config");
     printf("  Static IP: 0x%X\n", cfg.ip.addr);
 
     STEP("LAN: DHCP config");
-    CHECK_OK(netmgmt_utils_set_ifconfig_dhcp(RT_NET_DEV_USB), "Enable DHCP");
+    CHECK_OK(netmgmt_utils_set_ifconfig_dhcp(lan_itf), "Enable DHCP");
     DELAY_SEC(2);
-    CHECK_OK(netmgmt_utils_get_ifconfig(RT_NET_DEV_USB, &cfg), "Verify DHCP IP");
+    CHECK_OK(netmgmt_utils_get_ifconfig(lan_itf, &cfg), "Verify DHCP IP");
     printf("  DHCP IP: 0x%X\n", cfg.ip.addr);
 }
 

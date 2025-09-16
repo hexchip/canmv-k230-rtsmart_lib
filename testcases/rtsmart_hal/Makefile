@@ -47,14 +47,14 @@ $(OBJ_DIRS):
 # Compilation rule
 $(BUILD)/%.o: %.c | $(OBJ_DIRS)
 	@echo "[CC] $< -> $@"
-	@$(CC) $(CFLAGS) -MD -MP -MF $(@:.o=.d) -c $< -o $@
+	$(Q)$(CC) $(CFLAGS) -MD -MP -MF $(@:.o=.d) -c $< -o $@
 
 # Linking rule - separated from compilation
 $(BUILD)/%.elf: $(BUILD)/%.o | $(RTSMART_LIBS_ELF_INSTALL_PATH)
 	@$(MKDIR) -p $(@D)
 	@echo "[LD] $< -> $@"
-	@$(CC) $(CFLAGS) $< $(LDFLAGS) -o $@
-	@$(STRIP) $@
+	$(Q)$(CC) $(CFLAGS) $< $(LDFLAGS) -o $@
+	$(Q)$(STRIP) $@
 	@mv $@ $(RTSMART_LIBS_ELF_INSTALL_PATH)
 	@echo "[INSTALLED] $@ to $(RTSMART_LIBS_ELF_INSTALL_PATH)"
 

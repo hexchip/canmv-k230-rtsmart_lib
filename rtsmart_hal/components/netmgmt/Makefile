@@ -35,11 +35,11 @@ distclean: clean
 $(LIB): $(COBJS)
 	@$(MKDIR) -p $(@D)
 	@$(ECHO) "AR $@"
-	@$(AR) rcs $@ $^
+	$(Q)$(AR) rcs $@ $^
 
 $(COBJS): $(BUILD)/%.o: %.c
 	@$(ECHO) [CC] $<
-	@$(CC) $(CFLAGS) -MD -MP -MF $@.d -c $< -o $@
+	$(Q)$(CC) $(CFLAGS) -MD -MP -MF $@.d -c $< -o $@
 
 # $(sort $(var)) removes duplicates
 #
