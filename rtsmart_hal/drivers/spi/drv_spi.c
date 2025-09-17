@@ -55,6 +55,7 @@ struct drv_spi_inst {
     drv_gpio_inst_t *gpio_cs;
     uint8_t data_line;
     uint8_t cs_status;
+    bool use_hw_cs;
 };
 
 struct rt_spi_configuration {
@@ -158,6 +159,7 @@ int drv_spi_inst_create(int spi_id, bool active_low, int mode, uint32_t baudrate
         } else {
             drv_gpio_value_set((*inst)->gpio_cs, GPIO_PV_HIGH);
         }
+        (*inst)->use_hw_cs = true;
     }
 
     (*inst)->mode = mode;
@@ -389,10 +391,14 @@ static int drv_spi_update_config(drv_spi_inst_t inst)
     spi_config.parent.data_width = inst->data_bits;
 
     spi_config.parent.hard_cs = 0;
-    if (inst->cs_pin != -1) {
+    if (inst->cs_pin != -1 && inst->use_hw_cs) {
         spi_config.parent.soft_cs = inst->cs_pin | 0x80;
-    } else {
+    } else if (!inst->use_hw_cs) {
         spi_config.parent.soft_cs = 0;
+    } else {
+        printf("pls offer hw cs pin\n");
+        ret = -1;
+        goto out;
     }
 
     spi_config.parent.max_hz = inst->baudrate;
@@ -402,6 +408,7 @@ static int drv_spi_update_config(drv_spi_inst_t inst)
         printf("[hal_spi]: spi config fail: %s (errno: %d, ret: %d)\n", strerror(errno), errno, ret);
     }
 
+out:
     return ret;
 }
 
@@ -481,19 +488,16 @@ int drv_spi_set_cs_mode(drv_spi_inst_t inst, bool use_hw_cs)
     }
 
     pthread_spin_lock(&lock[inst->spi_id]);
-    if (!use_hw_cs) {
-        int cs;
 
-        cs = inst->cs_pin;
-        inst->cs_pin = -1;
-        ret = drv_spi_update_config(inst);
-        inst->cs_pin = cs;
-    } else {
-        if (inst->cs_pin == -1) {
-            printf("pls offer hw cs pin\n");
-            ret = -1;
-        }
+    if (use_hw_cs && inst->cs_pin == -1) {
+        printf("pls offer hw cs pin\n");
+        ret = -1;
+        goto out;
     }
+
+    inst->use_hw_cs = use_hw_cs;
+    ret = drv_spi_update_config(inst);
+
     pthread_spin_unlock(&lock[inst->spi_id]);
 
 out:
