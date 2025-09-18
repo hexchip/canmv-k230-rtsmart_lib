@@ -26,7 +26,6 @@
 #include <stdio.h>
 #include <string.h>
 
-
 #include "canmv_misc.h"
 
 int canmv_misc_get_sys_heap_size(struct canmv_misc_dev_meminfo_t* meminfo)
@@ -168,6 +167,28 @@ int canmv_misc_set_auto_exec_py_stage(int stage)
     }
 
     if (0x00 != canmv_misc_dev_ioctl(MISC_DEV_CMD_SET_AUTO_EXEC_PY_STAGE, &stage)) {
+        return -1;
+    }
+
+    return 0;
+}
+
+int canmv_misc_create_encoder_dev(struct encoder_dev_cfg_t* cfg)
+{
+    if (!cfg) {
+        return -1;
+    }
+
+    if (0x00 != canmv_misc_dev_ioctl(MISC_DEV_CMD_CREATE_ROTARY_ENC_DEV, cfg)) {
+        return -1;
+    }
+
+    return 0;
+}
+
+int canmv_misc_delete_encode_dev(int index)
+{
+    if (0x00 != canmv_misc_dev_ioctl(MISC_DEV_CMD_DELETE_ROTARY_ENC_DEV, &index)) {
         return -1;
     }
 

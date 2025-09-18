@@ -48,6 +48,8 @@
 #define MISC_DEV_CMD_SET_TIMEZONE           _IOWR('M', 0x0b, void*)
 #define MISC_DEV_CMD_GET_TIMEZONE           _IOWR('M', 0x0c, void*)
 #define MISC_DEV_CMD_SET_AUTO_EXEC_PY_STAGE _IOWR('M', 0x0d, void*)
+#define MISC_DEV_CMD_CREATE_ROTARY_ENC_DEV  _IOWR('M', 0x0e, void*)
+#define MISC_DEV_CMD_DELETE_ROTARY_ENC_DEV  _IOWR('M', 0x0f, void*)
 
 #ifdef __cplusplus
 extern "C" {
@@ -80,6 +82,18 @@ enum {
     STAGE_FALLBACK_PY_START,
     STAGE_FALLBACK_PY_END,
     STAGE_MAX,
+};
+
+// MISC_DEV_CMD_CREATE_ROTARY_ENC_DEV
+struct encoder_pin_cfg_t {
+    int clk_pin; /* Clock/A phase pin */
+    int dt_pin; /* Data/B phase pin */
+    int sw_pin; /* Switch/button pin (use -1 if not connected) */
+};
+struct encoder_dev_cfg_t {
+    int index;
+
+    struct encoder_pin_cfg_t cfg;
 };
 
 static inline __attribute__((always_inline)) int canmv_misc_dev_ioctl(int cmd, void* args)
@@ -124,6 +138,9 @@ int canmv_misc_set_timezone(int32_t offset);
 int canmv_misc_get_timezone(int32_t* offset);
 
 int canmv_misc_set_auto_exec_py_stage(int stage);
+
+int canmv_misc_create_encoder_dev(struct encoder_dev_cfg_t* cfg);
+int canmv_misc_delete_encode_dev(int index);
 
 #ifdef __cplusplus
 }

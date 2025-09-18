@@ -27,34 +27,30 @@
 
 #include <stdint.h>
 
+#include "canmv_misc.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /* Encoder direction definitions */
-#define ENCODER_DIR_CW   1    /* Clockwise */
-#define ENCODER_DIR_CCW  0xFF /* Counter-clockwise */
-#define ENCODER_DIR_NONE 0    /* No movement */
+#define ENCODER_DIR_CW   1 /* Clockwise */
+#define ENCODER_DIR_CCW  2 /* Counter-clockwise */
+#define ENCODER_DIR_NONE 0 /* No movement */
 
 /* Data structures */
 struct encoder_data {
-    int32_t  delta;        /* Change since last read */
-    int64_t  total_count;  /* Total count */
-    uint8_t  direction;    /* Last direction */
+    int32_t  delta; /* Change since last read */
+    int64_t  total_count; /* Total count */
+    uint8_t  direction; /* Last direction */
     uint8_t  button_state; /* Button pressed state */
-    uint32_t timestamp;    /* Tick timestamp */
+    uint32_t timestamp; /* Tick timestamp */
 };
-/**
- * Initialize rotary encoder device
- * @return 0 on success, -1 on error
- */
-int rotary_encoder_init(void);
 
-/**
- * Deinitialize rotary encoder device
- * @return 0 on success, -1 on error
- */
-int rotary_encoder_deinit(void);
+struct encoder_dev_inst_t;
+
+int rotary_encoder_inst_create(struct encoder_dev_inst_t** inst, int index, struct encoder_pin_cfg_t* pin);
+int rotary_encoder_inst_destroy(struct encoder_dev_inst_t** inst);
 
 /**
  * Configure rotary encoder GPIO pins
@@ -63,14 +59,14 @@ int rotary_encoder_deinit(void);
  * @param sw_pin   Switch/button pin number (use -1 if not connected)
  * @return 0 on success, -1 on error
  */
-int rotary_encoder_config(int clk_pin, int dt_pin, int sw_pin);
+int rotary_encoder_config(struct encoder_dev_inst_t* inst, struct encoder_pin_cfg_t* pin);
 
 /**
  * Read encoder data (non-blocking)
  * @param data  Pointer to store encoder data
  * @return 0 on success, -1 on error
  */
-int rotary_encoder_read(struct encoder_data *data);
+int rotary_encoder_read(struct encoder_dev_inst_t* inst, struct encoder_data* data);
 
 /**
  * Wait for encoder event and read data
@@ -78,32 +74,35 @@ int rotary_encoder_read(struct encoder_data *data);
  * @param timeout_ms Timeout in milliseconds (0 = wait forever)
  * @return 1 if data available, 0 on timeout, -1 on error
  */
-int rotary_encoder_wait_event(struct encoder_data *data, int timeout_ms);
+int rotary_encoder_wait_event(struct encoder_dev_inst_t* inst, struct encoder_data* data, int timeout_ms);
 
 /**
  * Reset encoder count to zero
  * @return 0 on success, -1 on error
  */
-int rotary_encoder_reset(void);
+int rotary_encoder_reset(struct encoder_dev_inst_t* inst);
 
 /**
  * Set encoder count to specific value
  * @param count  New count value
  * @return 0 on success, -1 on error
  */
-int rotary_encoder_set_count(int64_t count);
+int rotary_encoder_set_count(struct encoder_dev_inst_t* inst, int64_t count);
 
 /**
  * Get current encoder count
  * @return Current count value
  */
-int64_t rotary_encoder_get_count(void);
+int64_t rotary_encoder_get_count(struct encoder_dev_inst_t* inst);
 
 /**
  * Get and clear encoder delta
  * @return Delta value since last read
  */
-int32_t rotary_encoder_get_delta(void);
+int32_t rotary_encoder_get_delta(struct encoder_dev_inst_t* inst);
+
+int rotary_encoder_get_index(struct encoder_dev_inst_t* inst, int* index);
+int rotary_encoder_get_pin_cfg(struct encoder_dev_inst_t* inst, struct encoder_pin_cfg_t* pin);
 
 #ifdef __cplusplus
 }
