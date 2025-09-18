@@ -51,56 +51,13 @@ struct encoder_dev_inst_t;
 
 int rotary_encoder_inst_create(struct encoder_dev_inst_t** inst, int index, struct encoder_pin_cfg_t* pin);
 int rotary_encoder_inst_destroy(struct encoder_dev_inst_t** inst);
-
-/**
- * Configure rotary encoder GPIO pins
- * @param clk_pin  CLK/A phase pin number
- * @param dt_pin   DT/B phase pin number
- * @param sw_pin   Switch/button pin number (use -1 if not connected)
- * @return 0 on success, -1 on error
- */
 int rotary_encoder_config(struct encoder_dev_inst_t* inst, struct encoder_pin_cfg_t* pin);
-
-/**
- * Read encoder data (non-blocking)
- * @param data  Pointer to store encoder data
- * @return 0 on success, -1 on error
- */
 int rotary_encoder_read(struct encoder_dev_inst_t* inst, struct encoder_data* data);
-
-/**
- * Wait for encoder event and read data
- * @param data       Pointer to store encoder data
- * @param timeout_ms Timeout in milliseconds (0 = wait forever)
- * @return 1 if data available, 0 on timeout, -1 on error
- */
 int rotary_encoder_wait_event(struct encoder_dev_inst_t* inst, struct encoder_data* data, int timeout_ms);
-
-/**
- * Reset encoder count to zero
- * @return 0 on success, -1 on error
- */
 int rotary_encoder_reset(struct encoder_dev_inst_t* inst);
-
-/**
- * Set encoder count to specific value
- * @param count  New count value
- * @return 0 on success, -1 on error
- */
 int rotary_encoder_set_count(struct encoder_dev_inst_t* inst, int64_t count);
-
-/**
- * Get current encoder count
- * @return Current count value
- */
 int64_t rotary_encoder_get_count(struct encoder_dev_inst_t* inst);
-
-/**
- * Get and clear encoder delta
- * @return Delta value since last read
- */
 int32_t rotary_encoder_get_delta(struct encoder_dev_inst_t* inst);
-
 int rotary_encoder_get_index(struct encoder_dev_inst_t* inst, int* index);
 int rotary_encoder_get_pin_cfg(struct encoder_dev_inst_t* inst, struct encoder_pin_cfg_t* pin);
 

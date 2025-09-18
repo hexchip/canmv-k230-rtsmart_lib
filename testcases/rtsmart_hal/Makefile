@@ -17,7 +17,7 @@ include $(SDK_RTSMART_SRC_DIR)/libs/mk/librtsmart_hal.mk
 
 # Compiler flags
 CFLAGS := -std=gnu99 -fopenmp -march=rv64imafdcv -mabi=lp64d -mcmodel=medany
-CFLAGS += -I. $(LIB_CFLAGS)
+CFLAGS += -I. $(LIB_CFLAGS) -I$(SDK_SRC_ROOT_DIR)/include -include "generated/autoconf.h"
 CFLAGS += -Wall -Wextra
 CFLAGS += -ffunction-sections -fdata-sections
 
