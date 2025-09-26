@@ -64,6 +64,7 @@ typedef struct _drv_gpio_inst {
 
     void*             irq_args;
     gpio_irq_callback irq_callback;
+    int signo;
 } drv_gpio_inst_t;
 
 int  drv_gpio_inst_create(int pin, drv_gpio_inst_t** inst);
