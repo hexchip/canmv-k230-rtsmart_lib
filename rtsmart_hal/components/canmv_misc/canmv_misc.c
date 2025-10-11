@@ -108,11 +108,13 @@ int canmv_misc_delete_soft_i2c_device(uint32_t bus_num)
 
 int canmv_misc_ntp_sync(void)
 {
-    if (0x00 != canmv_misc_dev_ioctl(MISC_DEV_CMD_NTP_SYNC, NULL)) {
+    int result = -1;
+
+    if (0x00 != canmv_misc_dev_ioctl(MISC_DEV_CMD_NTP_SYNC, &result)) {
         return -1;
     }
 
-    return 0;
+    return result;
 }
 
 int canmv_misc_get_utc_timestamp(time_t* tm)
