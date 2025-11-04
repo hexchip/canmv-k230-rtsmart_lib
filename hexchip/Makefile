@@ -2,7 +2,7 @@ include ../mkenv.mk
 
 include $(SDK_SRC_ROOT_DIR)/.config
 
-subdirs-y := 
+subdirs-y := display_manager
 
 .PHONY: all clean distclean
 
