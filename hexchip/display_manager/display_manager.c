@@ -23,7 +23,7 @@ typedef struct screen_flush_arg {
 } screen_flush_arg_t;
 
 
-typedef struct channel_msg_context {
+struct channel_msg_context {
     display_manager_cmd_t cmd;
     void *cmd_arg;
     size_t data_size;
