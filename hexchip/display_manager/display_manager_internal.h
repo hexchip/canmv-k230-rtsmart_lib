@@ -5,6 +5,7 @@
 extern "C" {
 #endif
 
+#include <unistd.h>
 #include "display_manager.h"
 
 typedef enum display_manager_cmd {
@@ -16,6 +17,7 @@ typedef enum display_manager_cmd {
 } display_manager_cmd_t;
 
 typedef struct display_manager_screen_flush_cmd_arg {
+    pid_t pid;
     display_manager_area_t area;
     int px_map_shmid;
 } display_manager_screen_flush_cmd_arg_t;
@@ -23,7 +25,7 @@ typedef struct display_manager_screen_flush_cmd_arg {
 typedef struct display_manager_msg {
     display_manager_cmd_t cmd;
     union {
-        int pid;
+        pid_t pid;
         display_manager_screen_flush_cmd_arg_t screen_flush_arg;
     } arg;
     union {

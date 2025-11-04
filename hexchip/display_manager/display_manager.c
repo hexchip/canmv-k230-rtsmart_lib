@@ -91,6 +91,7 @@ rt_inline void prepare_call_msg(channel_msg_context_t *context, void *data) {
         {
             screen_flush_arg_t *arg = context->cmd_arg;
             int px_map_shmid = (((int *)arg->px_map) - 1)[0];
+            msg->arg.screen_flush_arg.pid = getpid();
             msg->arg.screen_flush_arg.area = *arg->area;
             msg->arg.screen_flush_arg.px_map_shmid = px_map_shmid;
             break;
