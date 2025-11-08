@@ -4,8 +4,8 @@ subdirs-y :=
 
 ifndef RTT_LIBS_DISABLED
 subdirs-y += rtsmart_hal
-subdirs-y += 3rd-party
 subdirs-y += hexchip
+subdirs-y += 3rd-party
 subdirs-$(CONFIG_RTSMART_LIBS_ENABLE_TESTCASES) += testcases
 endif
 
