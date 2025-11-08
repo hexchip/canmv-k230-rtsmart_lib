@@ -1,4 +1,5 @@
 menu "RT-Smart Hexchip Configuration"
 
+    source "$(SDK_RTSMART_SRC_DIR)/libs/hexchip/display_manager/Kconfig"
 
 endmenu
