@@ -1,4 +1,9 @@
 inc_dir := $(SDK_RTSMART_BUILD_DIR)/libs/3rd-party/include
+
+ifdef CONFIG_RTSMART_3RD_PARTY_ENABLE_LVGL
+	inc_dir += $(SDK_RTSMART_BUILD_DIR)/libs/3rd-party/include/lvgl
+endif
+
 lib_dir := $(SDK_RTSMART_BUILD_DIR)/libs/3rd-party/lib
 
 LIB_CFLAGS += $(addprefix -I, $(inc_dir))
