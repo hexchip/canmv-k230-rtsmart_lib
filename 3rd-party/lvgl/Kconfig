@@ -1,0 +1,14 @@
+menuconfig RTSMART_3RD_PARTY_ENABLE_LVGL
+    bool "LVGL (official): Light and Versatile Graphics Library"
+    default n
+    select USING_DISPLAY_MANAGER
+
+    if RTSMART_3RD_PARTY_ENABLE_LVGL
+        config PKG_LVGL_USING_EXAMPLES
+        bool "Using Examples"
+        default n
+
+        config PKG_LVGL_USING_DEMOS
+        bool "Using demos"
+        default n
+    endif

@@ -24,4 +24,6 @@ menu "RT-Smart 3rd-party Configuration"
         source "$(SDK_RTSMART_SRC_DIR)/libs/3rd-party/mqttclient/Kconfig"
     endif
 
+    source "$(SDK_RTSMART_SRC_DIR)/libs/3rd-party/lvgl/Kconfig"
+
 endmenu
