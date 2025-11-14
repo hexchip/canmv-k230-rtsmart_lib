@@ -21,12 +21,15 @@
     #define PKG_LVGL_THREAD_PRIO (RT_THREAD_PRIORITY_MAX*2/3)
 #endif /* PKG_LVGL_THREAD_PRIO */
 
+extern char *rt_strcpy(char *dst, const char *src);
+extern rt_tick_t rt_tick_get_millisecond(void);
 extern void lv_port_indev_init(void);
 
 static pthread_t s_lvgl_thread = NULL;
 
 static volatile bool s_is_lvgl_thread_running = false; 
 static lvgl_gui_deinit_func s_gui_deinit = NULL;
+static void *s_context = NULL;
 
 #if LV_USE_LOG && LV_LOG_PRINTF == 0
 static void lv_rt_log(lv_log_level_t level, const char * buf) {
@@ -61,7 +64,7 @@ static void* lvgl_thread_entry(void *parameter) {
     return NULL;
 }
 
-int lvgl_thread_init(uint32_t stack_size, uint8_t priority, lvgl_gui_init_func gui_init, lvgl_gui_deinit_func gui_deinit) {
+int lvgl_thread_init(uint32_t stack_size, uint8_t priority, lvgl_gui_init_func gui_init, lvgl_gui_deinit_func gui_deinit, void *context) {
     if (stack_size == 0) {
         LV_LOG_ERROR("stack_size must > 0");
         return -EINVAL;
@@ -73,6 +76,7 @@ int lvgl_thread_init(uint32_t stack_size, uint8_t priority, lvgl_gui_init_func g
     }
 
     s_gui_deinit = gui_deinit;
+    s_context = context;
 
     lv_init();
 
@@ -80,6 +84,7 @@ int lvgl_thread_init(uint32_t stack_size, uint8_t priority, lvgl_gui_init_func g
         lv_log_register_print_cb(lv_rt_log);
     #endif /* LV_USE_LOG */
 
+    
     lv_tick_set_cb(&rt_tick_get_millisecond);
 
     int err = lv_port_disp_init();
@@ -91,7 +96,7 @@ int lvgl_thread_init(uint32_t stack_size, uint8_t priority, lvgl_gui_init_func g
 
     lv_port_indev_init();
 
-    err = gui_init();
+    err = gui_init(context);
     if (err) {
         LV_LOG_ERROR("lv_user_gui_init failed! err = %d", err);
         lvgl_thread_deint();
@@ -121,7 +126,7 @@ int lvgl_thread_deint() {
         pthread_join(s_lvgl_thread, NULL);
         s_lvgl_thread = NULL;
         if (s_gui_deinit) {
-            s_gui_deinit();
+            s_gui_deinit(s_context);
         }
         lv_port_disp_deinit();
     }
