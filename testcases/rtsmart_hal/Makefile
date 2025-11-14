@@ -17,7 +17,7 @@ include $(SDK_RTSMART_SRC_DIR)/libs/mk/librtsmart_hal.mk
 
 # Compiler flags
 CFLAGS := -std=gnu99 -fopenmp -march=rv64imafdcv -mabi=lp64d -mcmodel=medany
-CFLAGS += -I. $(LIB_CFLAGS)
+CFLAGS += -I. $(LIB_CFLAGS) -I$(SDK_SRC_ROOT_DIR)/include -include "generated/autoconf.h"
 CFLAGS += -Wall -Wextra
 CFLAGS += -ffunction-sections -fdata-sections
 
@@ -47,14 +47,14 @@ $(OBJ_DIRS):
 # Compilation rule
 $(BUILD)/%.o: %.c | $(OBJ_DIRS)
 	@echo "[CC] $< -> $@"
-	@$(CC) $(CFLAGS) -MD -MP -MF $(@:.o=.d) -c $< -o $@
+	$(Q)$(CC) $(CFLAGS) -MD -MP -MF $(@:.o=.d) -c $< -o $@
 
 # Linking rule - separated from compilation
 $(BUILD)/%.elf: $(BUILD)/%.o | $(RTSMART_LIBS_ELF_INSTALL_PATH)
 	@$(MKDIR) -p $(@D)
 	@echo "[LD] $< -> $@"
-	@$(CC) $(CFLAGS) $< $(LDFLAGS) -o $@
-	@$(STRIP) $@
+	$(Q)$(CC) $(CFLAGS) $< $(LDFLAGS) -o $@
+	$(Q)$(STRIP) $@
 	@mv $@ $(RTSMART_LIBS_ELF_INSTALL_PATH)
 	@echo "[INSTALLED] $@ to $(RTSMART_LIBS_ELF_INSTALL_PATH)"
 

@@ -132,15 +132,15 @@ $(INC_STAMP):
 
 $(LIB): $(OBJS) 
 	@echo [LD] $@
-	@$(AR) rcs $@ $^
+	$(Q)$(AR) rcs $@ $^
 
 $(COBJS) : $(BUILD)/%.o : %.c $(INC_STAMP)
 	@echo [CC] $<
-	@$(CC) $(CFLAGS) -MD -MP -MF $@.d -c $< -o $@
+	$(Q)$(CC) $(CFLAGS) -MD -MP -MF $@.d -c $< -o $@
 
 $(CXXOBJS) : $(BUILD)/%.o : %.cpp $(INC_STAMP)
 	@echo [CXX] $<
-	@$(CXX) $(CXXFLAGS) -MD -MP -MF $@.d -c $< -o $@
+	$(Q)$(CXX) $(CXXFLAGS) -MD -MP -MF $@.d -c $< -o $@
 
 .PHONY: clean
 clean:

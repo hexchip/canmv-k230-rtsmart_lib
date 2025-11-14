@@ -33,6 +33,7 @@
 
 #include "drv_fpioa.h"
 #include "drv_gpio.h"
+#include "drv_timer.h"
 
 #define DRV_GPIO_DEV ("/dev/gpio")
 
@@ -45,7 +46,7 @@
 
 #define KD_GPIO_IOCTL_CTRL_IRQ _IOWR('G', 4, gpio_cfg_t*)
 
-#define KD_GPIO_SIG (SIGUSR1)
+#define KD_GPIO_SIG (SIGRTMIN + 1 + KD_TIMER_MAX_NUM)
 
 typedef struct {
     uint16_t pin;
@@ -274,15 +275,15 @@ static void drv_gpio_sig_handler(int sig, siginfo_t* si, void* uc)
 {
     drv_gpio_inst_t* inst = si->si_ptr;
 
-    if (KD_GPIO_SIG != sig) {
-        return;
-    }
-
     if (SI_SIGIO != si->si_code) {
         return;
     }
 
     if (!inst || (&gpio_inst_type != inst->base)) {
+        return;
+    }
+
+    if (inst->signo != sig) {
         return;
     }
 
@@ -295,6 +296,7 @@ int drv_gpio_register_irq(drv_gpio_inst_t* inst, gpio_pin_edge_t mode, int debou
 {
     int              ret;
     struct sigaction sa;
+    static int register_cnt;
 
     if (NULL == inst) {
         return -1;
@@ -326,16 +328,17 @@ int drv_gpio_register_irq(drv_gpio_inst_t* inst, gpio_pin_edge_t mode, int debou
     inst->curr_irq_mode = mode;
     inst->irq_args      = userargs;
     inst->irq_callback  = callback;
+    inst->signo = (KD_GPIO_SIG + (register_cnt++ % 8));
 
     sa.sa_flags     = SA_SIGINFO;
     sa.sa_sigaction = drv_gpio_sig_handler;
     sigemptyset(&sa.sa_mask);
-    if ((-1) == sigaction(KD_GPIO_SIG, &sa, NULL)) {
+    if ((-1) == sigaction(inst->signo, &sa, NULL)) {
         printf("[hal_gpio]: register sigaction failed.\n");
         return -1;
     }
 
-    cfg.signo  = KD_GPIO_SIG;
+    cfg.signo  = inst->signo;
     cfg.sigval = inst;
     if (0x00 != (ret = drv_gpio_ioctl(KD_GPIO_IOCTL_SET_IRQ, &cfg))) {
         printf("[hal_gpio]: set pin %d irq failed %d\n", cfg.pin, ret);
@@ -344,7 +347,7 @@ int drv_gpio_register_irq(drv_gpio_inst_t* inst, gpio_pin_edge_t mode, int debou
         sa.sa_sigaction = NULL;
         sigemptyset(&sa.sa_mask);
         sa.sa_flags = 0;
-        sigaction(KD_GPIO_SIG, &sa, NULL);
+        sigaction(inst->signo, &sa, NULL);
 
         return -1;
     }
@@ -381,7 +384,7 @@ int drv_gpio_unregister_irq(drv_gpio_inst_t* inst)
     sa.sa_sigaction = NULL;
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = 0;
-    sigaction(KD_GPIO_SIG, &sa, NULL);
+    sigaction(inst->signo, &sa, NULL);
 
     return 0;
 }

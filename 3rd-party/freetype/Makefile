@@ -108,11 +108,11 @@ $(LIB): $(OBJS)
 
 $(COBJS) : $(BUILD)/%.o : %.c
 	@echo [CC] $<
-	@$(CC) $(CFLAGS) -MD -MP -MF $@.d -c $< -o $@
+	$(Q)$(CC) $(CFLAGS) -MD -MP -MF $@.d -c $< -o $@
 
 $(CXXOBJS) : $(BUILD)/%.o : %.cpp
 	@echo [AS] $<
-	@$(CXX) $(CXXFLAGS) -MD -MP -MF $@.d -c $< -o $@
+	$(Q)$(CXX) $(CXXFLAGS) -MD -MP -MF $@.d -c $< -o $@
 
 .PHONY: clean
 clean:

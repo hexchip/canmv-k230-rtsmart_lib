@@ -35,7 +35,7 @@
 
 #include "drv_timer.h"
 
-#define KD_TIMER_SIG (SIGUSR2)
+#define KD_TIMER_SIG (SIGRTMIN + 1)
 
 #define HWTIMER_CTRL_FREQ_SET (19 * 0x100 + 0x01) /* set the count frequency */
 #define HWTIMER_CTRL_STOP     (19 * 0x100 + 0x02) /* stop timer */
@@ -336,10 +336,6 @@ static void drv_timer_sig_handler(int sig, siginfo_t* si, void* uc)
 {
     drv_hard_timer_inst_t* inst = si->si_ptr;
 
-    if (KD_TIMER_SIG != sig) {
-        return;
-    }
-
     if (SI_TIMER != si->si_code) {
         return;
     }
@@ -370,7 +366,7 @@ int drv_hard_timer_register_irq(drv_hard_timer_inst_t* inst, timer_irq_callback 
     sa.sa_flags     = SA_SIGINFO;
     sa.sa_sigaction = drv_timer_sig_handler;
     sigemptyset(&sa.sa_mask);
-    if ((-1) == sigaction(KD_TIMER_SIG, &sa, NULL)) {
+    if ((-1) == sigaction(KD_TIMER_SIG + inst->id, &sa, NULL)) {
         printf("[hal_hdtimer]: register sigaction failed.\n");
         return -1;
     }
@@ -379,7 +375,7 @@ int drv_hard_timer_register_irq(drv_hard_timer_inst_t* inst, timer_irq_callback 
     inst->irq_callback = callback;
 
     cfg.enable = 1;
-    cfg.signo  = KD_TIMER_SIG;
+    cfg.signo  = KD_TIMER_SIG + (inst->id);
     cfg.sigval = inst;
 
     if (0x00 != drv_timer_ioctl(inst, HWTIMER_CTRL_IRQ_SET, &cfg)) {
@@ -389,7 +385,7 @@ int drv_hard_timer_register_irq(drv_hard_timer_inst_t* inst, timer_irq_callback 
         sa.sa_sigaction = NULL;
         sigemptyset(&sa.sa_mask);
         sa.sa_flags = 0;
-        sigaction(KD_TIMER_SIG, &sa, NULL);
+        sigaction(KD_TIMER_SIG + (inst->id), &sa, NULL);
 
         return -1;
     }
@@ -423,7 +419,7 @@ int drv_hard_timer_unregister_irq(drv_hard_timer_inst_t* inst)
     sa.sa_sigaction = NULL;
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = 0;
-    sigaction(KD_TIMER_SIG, &sa, NULL);
+    sigaction(KD_TIMER_SIG + (inst->id), &sa, NULL);
 
     return 0;
 }

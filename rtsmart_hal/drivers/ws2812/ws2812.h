@@ -29,6 +29,14 @@
 
 #include <sys/ioctl.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
 int ws2812_stream_over_gpio(int pin, uint32_t* timing_ns, const uint8_t* buf, size_t len);
 
 int ws2812_device_init(void);
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */

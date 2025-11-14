@@ -24,6 +24,10 @@
  */
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
@@ -59,3 +63,7 @@ int freetype_wrap_draw_string(int x_off, int y_off, int char_size, const char* s
                               freetype_wrap_draw_bitmap draw, void* draw_ctx);
 
 void freetype_wrap_deinit(void);
+
+#ifdef __cplusplus
+}
+#endif

@@ -1,6 +1,21 @@
 include ../../mkenv.mk
 
-subdirs-y := fpioa gpio timer sbus i2c adc tsensor wdt spi pwm uart ws2812 onewire
+subdirs-y := \
+	fpioa \
+	gpio \
+	timer \
+	sbus \
+	i2c \
+	adc \
+	tsensor \
+	wdt \
+	spi \
+	pwm \
+	uart \
+	ws2812 \
+	onewire 
+
+subdirs-$(CONFIG_ENABLE_ROTARY_ENCODER) += rotary_encoder
 
 .PHONY: all clean distclean
 

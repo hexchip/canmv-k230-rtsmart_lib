@@ -12,7 +12,7 @@ CDEPS	:= $(patsubst %, $(BUILD)/%, $(CFILES:.c=.o.d))
 CINCS  := $(wildcard *.h)
 
 CFLAGS := -std=gnu99 -fopenmp -march=rv64imafdcv -mabi=lp64d -mcmodel=medany
-CFLAGS += -I. -I../fpioa
+CFLAGS += -I. -I../fpioa -I../timer
 
 .PHONY: all clean distclean
 
@@ -34,11 +34,11 @@ distclean: clean
 $(LIB): $(COBJS)
 	@$(MKDIR) -p $(@D)
 	@$(ECHO) "AR $@"
-	@$(AR) rcs $@ $^
+	$(Q)$(AR) rcs $@ $^
 
 $(COBJS): $(BUILD)/%.o: %.c
 	@$(ECHO) [CC] $<
-	@$(CC) $(CFLAGS) -MD -MP -MF $@.d -c $< -o $@
+	$(Q)$(CC) $(CFLAGS) -MD -MP -MF $@.d -c $< -o $@
 
 # $(sort $(var)) removes duplicates
 #

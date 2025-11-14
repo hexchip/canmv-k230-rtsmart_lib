@@ -12,7 +12,7 @@ CDEPS	:= $(patsubst %, $(BUILD)/%, $(CFILES:.c=.o.d))
 CINCS  := $(wildcard *.h)
 
 CFLAGS := -std=gnu99 -fopenmp -march=rv64imafdcv -mabi=lp64d -mcmodel=medany
-CFLAGS += -I.
+CFLAGS += -I. -I$(SDK_RTSMART_SRC_DIR)/libs/rtsmart_hal/components/canmv_misc
 
 .PHONY: all clean distclean
 
@@ -25,7 +25,6 @@ $(HEADER_TARGETS): $(RTSMART_HAL_INC_INSTALL_PATH)/%: %
 
 all: $(LIB) $(HEADER_TARGETS)
 	@$(ECHO) "Make lib$(DIR) done."
-	@$(CP) $(CINCS) $(RTSMART_HAL_INC_INSTALL_PATH)
 
 clean:
 	@$(RM) $(COBJS) $(CDEPS)
